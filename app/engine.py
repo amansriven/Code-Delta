@@ -5,6 +5,7 @@ from pathlib import Path
 
 import httpx
 
+from app.llm import explain_findings, suggest_extra_cases
 from app.openapi_diff import generate_cases
 
 DEMO_DIR = Path(__file__).resolve().parent.parent / "demo_apps"
@@ -62,7 +63,7 @@ def _run_case(base_url: str, case: dict) -> dict:
     return {"status_code": resp.status_code, "body": body}
 
 
-def compare(base_dir: Path, pr_dir: Path) -> list[dict]:
+def compare(base_dir: Path, pr_dir: Path, diff: str | None = None) -> list[dict]:
     """Diff both apps' OpenAPI specs to find changed endpoints/fields, generate
     edge-case requests targeted at those changes, run them against both apps,
     and return findings where behavior differed between base and PR:
@@ -85,6 +86,7 @@ def compare(base_dir: Path, pr_dir: Path) -> list[dict]:
         base_spec = httpx.get(f"{base_app.base_url}/openapi.json").json()
         pr_spec = httpx.get(f"{pr_app.base_url}/openapi.json").json()
         cases = generate_cases(base_spec, pr_spec)
+        cases += suggest_extra_cases(base_spec, pr_spec, cases)
 
         findings = []
         for case in cases:
@@ -104,6 +106,7 @@ def compare(base_dir: Path, pr_dir: Path) -> list[dict]:
                 {
                     "kind": kind,
                     "case": case["name"],
+                    "source": case.get("source", "rules"),
                     "request": {
                         "method": case["method"],
                         "path": case["path"],
@@ -113,6 +116,14 @@ def compare(base_dir: Path, pr_dir: Path) -> list[dict]:
                     "pr_response": pr_result,
                 }
             )
+
+        # Explanations are commentary on evidence that already stands alone —
+        # attached under a separate key so the UI can't blur the two.
+        for case_name, explanation in explain_findings(findings, diff).items():
+            for finding in findings:
+                if finding["case"] == case_name:
+                    finding["explanation"] = explanation
+
         return findings
     finally:
         base_app.stop()
