@@ -1,14 +1,17 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from app.db import get_connection, init_schema
+from app.oauth import get_session
+from app.oauth import router as oauth_router
 from app.procrastinate_app import procrastinate_app
 from app.tasks import run_comparison
 from app.webhook import router as webhook_router
 
 app = FastAPI(title="CodeDelta")
 app.include_router(webhook_router)
+app.include_router(oauth_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -16,6 +19,7 @@ app.add_middleware(
         "https://codedelta-frontend.amansriven757.workers.dev",
         "http://localhost:3000",
     ],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -51,20 +55,20 @@ def create_run(req: CreateRunRequest):
 
 
 @app.get("/runs/{run_id}")
-def get_run(run_id: int):
+def get_run(run_id: int, session: dict = Depends(get_session)):
     with get_connection() as conn:
         row = conn.execute(
             "SELECT id, repo, pr_number, status, result, error, created_at, updated_at FROM runs WHERE id = %s",
             (run_id,),
         ).fetchone()
-    if row is None:
+    if row is None or row[1] not in session["accessible_repos"]:
         raise HTTPException(status_code=404, detail="run not found")
     keys = ["id", "repo", "pr_number", "status", "result", "error", "created_at", "updated_at"]
     return dict(zip(keys, row))
 
 
 @app.get("/runs")
-def list_runs():
+def list_runs(session: dict = Depends(get_session)):
     with get_connection() as conn:
         rows = conn.execute(
             """
@@ -82,8 +86,9 @@ def list_runs():
                     WHEN jsonb_array_length(result->'findings') > 0 THEN 'status_code_changed'
                     ELSE 'none'
                 END AS highest_severity
-            FROM runs ORDER BY id DESC LIMIT 50
-            """
+            FROM runs WHERE repo = ANY(%s) ORDER BY id DESC LIMIT 50
+            """,
+            (session["accessible_repos"],),
         ).fetchall()
     keys = [
         "id", "repo", "pr_number", "status", "created_at",
@@ -93,14 +98,15 @@ def list_runs():
 
 
 @app.post("/runs/{run_id}/retry")
-def retry_run(run_id: int):
+def retry_run(run_id: int, session: dict = Depends(get_session)):
     with get_connection() as conn:
-        row = conn.execute(
+        row = conn.execute("SELECT repo FROM runs WHERE id = %s", (run_id,)).fetchone()
+        if row is None or row[0] not in session["accessible_repos"]:
+            raise HTTPException(status_code=404, detail="run not found")
+        conn.execute(
             "UPDATE runs SET status = 'pending', result = NULL, error = NULL, updated_at = now() "
-            "WHERE id = %s RETURNING id",
+            "WHERE id = %s",
             (run_id,),
-        ).fetchone()
-    if row is None:
-        raise HTTPException(status_code=404, detail="run not found")
+        )
     run_comparison.defer(run_id=run_id)
     return {"id": run_id, "status": "pending"}

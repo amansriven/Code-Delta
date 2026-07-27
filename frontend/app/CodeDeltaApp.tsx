@@ -8,6 +8,7 @@ import {
   fetchRuns,
   Finding,
   FindingKind,
+  githubLoginUrl,
   liveApiUrl,
   RunDetail,
   RunStatus,
@@ -42,7 +43,7 @@ function PublicHeader() {
         <a className="nav-link" href="#how-it-works">
           How it works
         </a>
-        <a className="button button-quiet button-small" href="/login">
+        <a className="button button-quiet button-small" href={githubLoginUrl}>
           Sign in
         </a>
       </nav>
@@ -185,7 +186,7 @@ function LandingPage() {
             pull request—then reports only the behavior that actually changed.
           </p>
           <div className="hero-actions">
-            <a className="button button-primary" href="/login">
+            <a className="button button-primary" href={githubLoginUrl}>
               Continue with GitHub <span aria-hidden="true">→</span>
             </a>
             <a className="button button-quiet" href="/runs">
@@ -329,7 +330,7 @@ function OnboardingPage() {
           <a className="button button-primary" href="/runs">
             Continue with demo workspace →
           </a>
-          <a className="text-link" href="/login">
+          <a className="text-link" href={githubLoginUrl}>
             Use another account
           </a>
         </div>
@@ -485,7 +486,8 @@ function RunsPage() {
       })
       .catch((reason: Error) => {
         if (reason.name !== "AbortError") {
-          setError("CodeΔ could not reach the runs API. Check the backend connection and try again.");
+          setRuns([]);
+          setError(reason.message || "CodeΔ could not reach the runs API. Check the backend connection and try again.");
         }
       })
       .finally(() => setLoading(false));
@@ -565,8 +567,13 @@ function RunsPage() {
             <div className="error-state" role="alert">
               <span aria-hidden="true">!</span>
               <div>
-                <h2>Runs are temporarily unavailable</h2>
+                <h2>{error.includes("Sign in") ? "Sign in required" : "Runs are temporarily unavailable"}</h2>
                 <p>{error}</p>
+                {error.includes("Sign in") && (
+                  <a className="button button-primary" href={githubLoginUrl}>
+                    Continue with GitHub
+                  </a>
+                )}
               </div>
             </div>
           ) : loading ? (

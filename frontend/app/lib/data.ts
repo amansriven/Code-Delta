@@ -174,7 +174,13 @@ export const liveApiUrl =
   process.env.NEXT_PUBLIC_CODEDELTA_API_URL?.replace(/\/$/, "") ?? "";
 
 export async function fetchRuns(signal?: AbortSignal): Promise<RunSummary[]> {
-  const response = await fetch(`${liveApiUrl}/runs`, { signal });
+  const response = await fetch(`${liveApiUrl}/runs`, {
+    signal,
+    credentials: "include",
+  });
+  if (response.status === 401) {
+    throw new Error("Sign in with GitHub to see your runs.");
+  }
   if (!response.ok) {
     throw new Error(`Runs request failed with ${response.status}`);
   }
@@ -185,7 +191,13 @@ export async function fetchRun(
   runId: number,
   signal?: AbortSignal,
 ): Promise<RunDetail> {
-  const response = await fetch(`${liveApiUrl}/runs/${runId}`, { signal });
+  const response = await fetch(`${liveApiUrl}/runs/${runId}`, {
+    signal,
+    credentials: "include",
+  });
+  if (response.status === 401) {
+    throw new Error("Sign in with GitHub to see this run.");
+  }
   if (!response.ok) {
     throw new Error(
       response.status === 404
@@ -195,3 +207,5 @@ export async function fetchRun(
   }
   return response.json();
 }
+
+export const githubLoginUrl = `${liveApiUrl}/auth/github/login`;

@@ -24,6 +24,16 @@ ALTER TABLE runs ADD COLUMN IF NOT EXISTS head_ref TEXT;
 ALTER TABLE runs ADD COLUMN IF NOT EXISTS head_sha TEXT;
 ALTER TABLE runs ADD COLUMN IF NOT EXISTS installation_id BIGINT;
 ALTER TABLE runs ADD COLUMN IF NOT EXISTS error TEXT;
+
+CREATE TABLE IF NOT EXISTS sessions (
+    id TEXT PRIMARY KEY,
+    github_user_id BIGINT NOT NULL,
+    github_login TEXT NOT NULL,
+    avatar_url TEXT,
+    accessible_repos JSONB NOT NULL DEFAULT '[]',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    expires_at TIMESTAMPTZ NOT NULL
+);
 """
 
 
