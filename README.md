@@ -1,91 +1,356 @@
-# CodeDelta
+<p align="center">
+  <img src="docs/assets/brand/codedelta-hero.png" alt="Code Delta — Your API changed. Know exactly how." width="900">
+</p>
 
-See [api-verifier-spec.md](api-verifier-spec.md) for the product spec.
+<p align="center">
+  <strong>Evidence-first API regression detection for pull requests.</strong>
+</p>
 
-## Job queue
+<p align="center">
+  CodeΔ generates targeted edge-case requests, runs them against both sides of
+  a pull request, and reports only the behavior that actually changed.
+</p>
 
-Runs are tracked in a `runs` table in Postgres and processed asynchronously via
-[procrastinate](https://procrastinate.readthedocs.io/) (a Postgres-backed task
-queue — no Redis/Celery needed). `POST /runs` inserts a row and enqueues a job;
-a separate `procrastinate worker` process picks it up and updates the row's
-status as it runs. This keeps webhook handlers fast (insert + enqueue, return
-immediately) and gives the future dashboard a table to poll/query for status.
+<p align="center">
+  <img alt="Python 3.12" src="https://img.shields.io/badge/Python-3.12-3776AB?style=flat-square&logo=python&logoColor=white">
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-API-009688?style=flat-square&logo=fastapi&logoColor=white">
+  <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-runs-4169E1?style=flat-square&logo=postgresql&logoColor=white">
+  <img alt="React" src="https://img.shields.io/badge/React-dashboard-20232A?style=flat-square&logo=react&logoColor=61DAFB">
+  <img alt="Project stage" src="https://img.shields.io/badge/stage-MVP-70D6E7?style=flat-square">
+</p>
 
-`app/tasks.py::run_comparison` compares real PR branches when the run came
-from a GitHub webhook (see below), and falls back to the demo apps
-(`demo_apps/base` vs `demo_apps/buggy`) for runs created directly via
-`POST /runs` — handy for local testing without needing a real PR.
+---
 
-## Comparison engine (Phases 1-2)
+## Why CodeΔ?
 
-- `app/engine.py` — spins up base and PR versions of the target app as real
-  subprocesses, runs generated edge-case requests against both, and returns
-  only findings where behavior differed (`kind: "regression"` when base
-  passed and PR failed; `kind: "status_code_changed"` for any other
-  status-code difference, e.g. a silent 404 → 200).
-- `app/openapi_diff.py` — generates those edge cases from the diff between
-  both apps' `/openapi.json`: body fields that became required or changed
-  type, and path/query params, targeted at whatever actually changed rather
-  than a fixed list.
-- `demo_apps/` — a small FastAPI app in five variants (`base` plus four
-  intentionally-bugged versions) used to stress-test the generator.
+API pull requests can look harmless in a code diff while silently changing
+runtime behavior:
 
-## GitHub App integration (Phase 3)
+- an optional field becomes required;
+- a missing resource changes from `404` to `200`;
+- a valid payload starts returning `422`;
+- an edge case that worked on `main` now produces a server error.
 
-`app/webhook.py` receives `pull_request` webhooks, `app/repo_fetch.py` clones
-the base/head branches, and `app/github_client.py` posts results back as a
-GitHub Check Run. To wire this up for real:
+Traditional review tools can suggest that something *might* be wrong. CodeΔ
+tests the change and shows what was observed:
 
-1. Create a GitHub App at github.com/settings/apps/new (or your org's
-   equivalent):
-   - Webhook URL: your publicly-reachable `/webhooks/github` endpoint (use
-     `ngrok http 8000` or similar for local testing — GitHub needs to reach it)
-   - Webhook secret: generate one, save it as `GITHUB_WEBHOOK_SECRET`
-   - Permissions: Repository → Pull requests: Read-only, Checks: Read & write,
-     Metadata: Read-only
-   - Subscribe to events: Pull request
-2. Generate a private key for the app (Settings → your app → Generate a
-   private key) and set it as `GITHUB_PRIVATE_KEY` (the full PEM contents).
-3. Set `GITHUB_APP_ID` to the App ID shown on the app's settings page.
-4. Install the app on a repo you control.
+```text
+POST /items
 
-```bash
-export GITHUB_APP_ID=...
-export GITHUB_PRIVATE_KEY="$(cat path/to/your-app.private-key.pem)"
-export GITHUB_WEBHOOK_SECRET=...
+Request
+{ "name": "example", "price": 1.0 }
+
+Base branch            Pull request
+201 Created      →      422 Unprocessable Entity
+discount: 0.0           discount: Field required
 ```
 
-Then start the API and worker as below with those env vars set. Opening or
-updating a PR on the installed repo should trigger a run automatically.
+That distinction is the product:
 
-## Local setup
+> **The same request succeeded on the base branch and failed on the pull
+> request. Here are both responses.**
+
+No speculative verdict. No pre-existing failures. Just reproducible evidence.
+
+## What CodeΔ does
+
+1. Receives a pull-request event from GitHub.
+2. Fetches the base and head revisions.
+3. Reads and diffs both OpenAPI specifications.
+4. Identifies changed endpoints, fields, and parameters.
+5. Generates focused edge cases for the changed surface.
+6. Starts both versions of the FastAPI application.
+7. Sends the same requests to each version.
+8. Keeps only requests whose behavior differs.
+9. Stores the run and publishes the evidence as a GitHub Check Run.
+10. Makes run history and response comparisons available to the dashboard.
+
+### Finding semantics
+
+| Finding | Meaning | Treatment |
+| --- | --- | --- |
+| `regression` | The base response succeeded, but the PR response failed. | High-severity evidence that the PR broke previously valid behavior. |
+| `status_code_changed` | Both branches responded, but their status codes differ in another way. | A behavior change worth reviewing without automatically calling it a regression. |
+| No finding | Both versions behaved equivalently, or both already failed. | Suppressed to keep review output focused. |
+
+## How it works
+
+```mermaid
+flowchart LR
+    GH["GitHub pull request"] --> WH["Webhook API"]
+    WH --> DB[("PostgreSQL run")]
+    DB --> Q["Procrastinate worker"]
+    Q --> CLONE["Fetch base + head"]
+    CLONE --> SPEC["Diff OpenAPI specs"]
+    SPEC --> CASES["Generate edge cases"]
+    CASES --> BASE["Run against base"]
+    CASES --> HEAD["Run against PR"]
+    BASE --> COMPARE["Compare responses"]
+    HEAD --> COMPARE
+    COMPARE --> RESULT["Reproduced findings"]
+    RESULT --> CHECK["GitHub Check Run"]
+    RESULT --> UI["CodeΔ dashboard"]
+```
+
+The job queue is backed by PostgreSQL through
+[Procrastinate](https://procrastinate.readthedocs.io/), so the MVP does not
+need Redis or Celery. Webhooks stay fast: they create a run, enqueue the work,
+and return while a separate worker performs the comparison.
+
+## Current capabilities
+
+- OpenAPI-aware detection of changed request bodies, path parameters, and
+  query parameters.
+- Generated cases for omitted fields, required-field changes, and type
+  changes.
+- Real base-versus-head execution in isolated subprocesses.
+- GitHub App webhook verification and Check Run publishing.
+- Asynchronous run lifecycle: `pending → running → done | failed`.
+- Persisted results, failure details, and retry support.
+- Demo FastAPI applications with intentionally introduced regressions.
+- Responsive dashboard for run history and side-by-side response evidence.
+- Clearly distinguished regressions and non-regression behavior changes.
+
+## Supported repositories
+
+CodeΔ deliberately keeps its first version narrow. A target repository should:
+
+- use Python and FastAPI;
+- expose a working `/openapi.json`;
+- have a simple local startup path such as `uvicorn app.main:app`;
+- run without complex external infrastructure, or provide local substitutes.
+
+Other languages, frameworks, stateful multi-step workflows, authentication
+matrices, and arbitrary multi-tenant code execution are outside the current
+MVP.
+
+## Repository structure
+
+```text
+CodeDelta/
+├── app/
+│   ├── main.py              # Runs API
+│   ├── webhook.py           # GitHub webhook receiver
+│   ├── tasks.py             # Background comparison jobs
+│   ├── engine.py            # Base-vs-PR execution and response comparison
+│   ├── openapi_diff.py      # Changed-surface detection and case generation
+│   ├── repo_fetch.py        # Base/head repository checkout
+│   ├── github_client.py     # GitHub authentication and Check Runs
+│   └── db.py                # PostgreSQL schema and connection
+├── demo_apps/               # Base app plus intentionally broken variants
+├── frontend/                # CodeΔ landing page and dashboard
+├── docs/assets/brand/       # Repository-safe brand artwork
+├── api-verifier-spec.md     # Product scope and design rationale
+├── frontend-handoff.md      # Backend API shapes for the dashboard
+├── docker-compose.yml       # Local PostgreSQL
+└── requirements.txt
+```
+
+## Quick start
+
+### Prerequisites
+
+- Python 3.12+
+- Docker
+- Node.js 22.13+ for the frontend
+- Git
+
+### 1. Start PostgreSQL
 
 ```bash
-docker compose up -d          # Postgres on localhost:5432
+docker compose up -d
+```
+
+The default local connection is:
+
+```text
+postgresql://codedelta:codedelta@localhost:5432/codedelta
+```
+
+### 2. Install the backend
+
+```bash
 python3 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
-PYTHONPATH=. ./.venv/bin/python -m procrastinate --app app.procrastinate_app.procrastinate_app schema --apply
+PYTHONPATH=. ./.venv/bin/python -m procrastinate \
+  --app app.procrastinate_app.procrastinate_app schema --apply
 ```
 
-(`PYTHONPATH=.` / `python -m` is needed so the `app` package resolves — the
-plain `procrastinate` console script doesn't add the cwd to `sys.path`.)
-
-Run the API (creates the `runs` table on startup):
+### 3. Start the API
 
 ```bash
 ./.venv/bin/uvicorn app.main:app --reload
 ```
 
-Run the worker in a separate terminal:
+The API is available at `http://localhost:8000`.
+
+### 4. Start the worker
+
+In a second terminal:
 
 ```bash
-PYTHONPATH=. ./.venv/bin/python -m procrastinate --app app.procrastinate_app.procrastinate_app worker
+PYTHONPATH=. ./.venv/bin/python -m procrastinate \
+  --app app.procrastinate_app.procrastinate_app worker
 ```
 
-Try it:
+### 5. Run a local comparison
+
+Manually created runs use the bundled base and buggy demo applications:
 
 ```bash
-curl -X POST localhost:8000/runs -H 'content-type: application/json' \
-  -d '{"repo": "octocat/demo", "pr_number": 1}'
-curl localhost:8000/runs/1
+curl -X POST http://localhost:8000/runs \
+  -H 'content-type: application/json' \
+  -d '{"repo": "local/codedelta-demo", "pr_number": 1}'
+
+curl http://localhost:8000/runs/1
 ```
+
+### 6. Start the dashboard
+
+```bash
+cd frontend
+npm ci
+npm run dev
+```
+
+Open `http://localhost:3000`. The dashboard uses clearly labeled preview data
+by default. Set `NEXT_PUBLIC_CODEDELTA_API_URL` when connecting it to a hosted
+API with the appropriate CORS and authentication configuration.
+
+## API overview
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `GET` | `/runs` | Return the 50 most recent runs. |
+| `GET` | `/runs/{id}` | Return a run and its reproduced findings. |
+| `POST` | `/runs` | Create a manual comparison run for local testing. |
+| `POST` | `/runs/{id}/retry` | Requeue a failed or completed run. |
+| `POST` | `/webhooks/github` | Receive signed GitHub pull-request events. |
+
+`result` remains `null` while a run is pending or running. Completed results
+have the following shape:
+
+```json
+{
+  "findings": [
+    {
+      "case": "omit_discount",
+      "kind": "regression",
+      "request": {
+        "method": "POST",
+        "path": "/items",
+        "json": {
+          "name": "example",
+          "price": 1.0
+        }
+      },
+      "base_response": {
+        "status_code": 201,
+        "body": {
+          "discount": 0.0
+        }
+      },
+      "pr_response": {
+        "status_code": 422,
+        "body": {
+          "detail": "Field required"
+        }
+      }
+    }
+  ]
+}
+```
+
+## GitHub App setup
+
+The existing GitHub App integration handles repository events and Check Runs.
+It is separate from the future GitHub OAuth App used to sign users into the
+dashboard.
+
+<details>
+<summary><strong>Configure the repository GitHub App</strong></summary>
+
+1. Create a GitHub App from your account or organization settings.
+2. Set its webhook URL to the publicly reachable
+   `https://your-api.example.com/webhooks/github`.
+3. Generate a webhook secret.
+4. Grant these repository permissions:
+   - **Pull requests:** Read-only
+   - **Checks:** Read and write
+   - **Metadata:** Read-only
+5. Subscribe to the **Pull request** event.
+6. Generate a private key and install the app on a test repository.
+7. Configure the environment variables below before starting the API and
+   worker.
+
+</details>
+
+### Environment variables
+
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `DATABASE_URL` | Production | PostgreSQL connection string. A local default is provided. |
+| `GITHUB_APP_ID` | GitHub integration | Numeric ID of the repository GitHub App. |
+| `GITHUB_PRIVATE_KEY` | GitHub integration | Full PEM private key used to create installation tokens. |
+| `GITHUB_WEBHOOK_SECRET` | GitHub integration | Secret used to validate webhook signatures. |
+| `NEXT_PUBLIC_CODEDELTA_API_URL` | Hosted frontend | Public base URL of the CodeΔ API. |
+
+Example local configuration:
+
+```bash
+export GITHUB_APP_ID="..."
+export GITHUB_PRIVATE_KEY="$(cat path/to/code-delta.private-key.pem)"
+export GITHUB_WEBHOOK_SECRET="..."
+```
+
+Never commit private keys, webhook secrets, or production database
+credentials.
+
+## Product boundaries and security
+
+The backend does not yet provide hosted user authentication or
+repository-level authorization. Do not expose `/runs` publicly until the
+production service includes:
+
+- a separate GitHub OAuth App for user login;
+- secure server-side sessions;
+- repository access checks on every run endpoint;
+- production CORS, cookie, and CSRF policies.
+
+The repository GitHub App already handles webhooks and Check Runs. User login
+is a distinct integration and should not reuse the installation-token flow as
+dashboard authentication.
+
+## Roadmap
+
+- [x] Deterministic OpenAPI diffing
+- [x] Targeted edge-case generation
+- [x] Base-versus-PR execution
+- [x] GitHub webhooks and Check Runs
+- [x] PostgreSQL-backed job queue
+- [x] Failure state and run retries
+- [x] Dashboard experience
+- [ ] Production backend deployment
+- [ ] GitHub OAuth and secure sessions
+- [ ] Repository-level dashboard authorization
+- [ ] Hosted frontend-to-API integration
+- [ ] Pagination, filtering, and operational monitoring
+
+## Brand assets
+
+<p align="center">
+  <img src="docs/assets/brand/codedelta-badge.png" alt="Code Delta dark badge" width="260">
+  &nbsp;&nbsp;&nbsp;
+  <img src="docs/assets/brand/codedelta-mark.png" alt="Code Delta standalone mark" width="180">
+</p>
+
+The full product brief is available in
+[api-verifier-spec.md](api-verifier-spec.md), and the dashboard API handoff is
+documented in [frontend-handoff.md](frontend-handoff.md).
+
+---
+
+<p align="center">
+  <strong>CodeΔ</strong><br>
+  Evidence, not speculation.
+</p>
