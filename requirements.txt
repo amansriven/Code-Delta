@@ -2,3 +2,4 @@ fastapi
 uvicorn[standard]
 procrastinate
 psycopg[binary]
+httpx
