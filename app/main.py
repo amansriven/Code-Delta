@@ -43,12 +43,12 @@ def create_run(req: CreateRunRequest):
 def get_run(run_id: int):
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT id, repo, pr_number, status, result, created_at, updated_at FROM runs WHERE id = %s",
+            "SELECT id, repo, pr_number, status, result, error, created_at, updated_at FROM runs WHERE id = %s",
             (run_id,),
         ).fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="run not found")
-    keys = ["id", "repo", "pr_number", "status", "result", "created_at", "updated_at"]
+    keys = ["id", "repo", "pr_number", "status", "result", "error", "created_at", "updated_at"]
     return dict(zip(keys, row))
 
 
@@ -60,3 +60,17 @@ def list_runs():
         ).fetchall()
     keys = ["id", "repo", "pr_number", "status", "created_at"]
     return [dict(zip(keys, r)) for r in rows]
+
+
+@app.post("/runs/{run_id}/retry")
+def retry_run(run_id: int):
+    with get_connection() as conn:
+        row = conn.execute(
+            "UPDATE runs SET status = 'pending', result = NULL, error = NULL, updated_at = now() "
+            "WHERE id = %s RETURNING id",
+            (run_id,),
+        ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="run not found")
+    run_comparison.defer(run_id=run_id)
+    return {"id": run_id, "status": "pending"}
