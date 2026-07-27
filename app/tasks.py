@@ -1,8 +1,23 @@
 import json
+import logging
+import shutil
 
 from app.db import get_connection
 from app.engine import DEMO_DIR, compare
 from app.procrastinate_app import procrastinate_app
+from app.repo_fetch import fetch_ref
+
+logger = logging.getLogger(__name__)
+
+
+def _get_run(run_id: int) -> dict:
+    with get_connection() as conn:
+        row = conn.execute(
+            "SELECT clone_url, base_ref, head_ref, head_sha, installation_id, repo FROM runs WHERE id = %s",
+            (run_id,),
+        ).fetchone()
+    keys = ["clone_url", "base_ref", "head_ref", "head_sha", "installation_id", "repo"]
+    return dict(zip(keys, row))
 
 
 def _set_status(run_id: int, status: str, result: dict | None = None) -> None:
@@ -15,10 +30,31 @@ def _set_status(run_id: int, status: str, result: dict | None = None) -> None:
 
 @procrastinate_app.task(name="run_comparison")
 def run_comparison(run_id: int) -> None:
-    """Phase 1 of the spec: no GitHub integration yet, so every run compares
-    the hand-built demo apps (demo_apps/base vs demo_apps/buggy) rather than
-    a real PR's branches. Swap in real repo checkouts once Phase 3 lands.
+    """Phase 3: if the run has real repo info (set by the GitHub webhook),
+    clone the actual base/PR branches and compare those. Otherwise (e.g. a
+    run created directly via POST /runs for local testing) fall back to the
+    demo apps, same as Phase 1/2.
     """
     _set_status(run_id, "running")
-    regressions = compare(DEMO_DIR / "base", DEMO_DIR / "buggy")
-    _set_status(run_id, "done", result={"regressions": regressions})
+    run = _get_run(run_id)
+
+    if run["clone_url"] and run["base_ref"] and run["head_ref"]:
+        base_dir = fetch_ref(run["clone_url"], run["base_ref"])
+        head_dir = fetch_ref(run["clone_url"], run["head_ref"])
+        try:
+            findings = compare(base_dir, head_dir)
+        finally:
+            shutil.rmtree(base_dir, ignore_errors=True)
+            shutil.rmtree(head_dir, ignore_errors=True)
+
+        if run["installation_id"]:
+            try:
+                from app.github_client import post_check_run
+
+                post_check_run(run["installation_id"], run["repo"], run["head_sha"], findings)
+            except Exception:
+                logger.exception("failed to post check run for run_id=%s", run_id)
+    else:
+        findings = compare(DEMO_DIR / "base", DEMO_DIR / "buggy")
+
+    _set_status(run_id, "done", result={"findings": findings})

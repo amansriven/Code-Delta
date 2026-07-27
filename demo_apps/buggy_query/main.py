@@ -7,7 +7,7 @@ app = FastAPI()
 class Item(BaseModel):
     name: str
     price: float
-    discount: float  # regression: used to default to 0.0, now required
+    discount: float = 0.0
 
 
 @app.post("/items", status_code=201)
@@ -23,5 +23,5 @@ def get_item(item_id: int):
 
 
 @app.get("/items")
-def list_items(limit: int = 10):
+def list_items(limit: int):  # regression: used to default to 10, now required
     return {"limit": limit}
