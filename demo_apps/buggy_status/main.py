@@ -19,3 +19,8 @@ def create_item(item: Item):
 def get_item(item_id: int):
     # regression: dropped the 404-for-unknown-id check, always returns 200
     return {"item_id": item_id}
+
+
+@app.get("/items")
+def list_items(limit: int = 10):
+    return {"limit": limit}

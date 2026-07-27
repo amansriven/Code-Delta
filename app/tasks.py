@@ -20,5 +20,5 @@ def run_comparison(run_id: int) -> None:
     a real PR's branches. Swap in real repo checkouts once Phase 3 lands.
     """
     _set_status(run_id, "running")
-    regressions = compare(DEMO_DIR / "base", DEMO_DIR / "buggy")
-    _set_status(run_id, "done", result={"regressions": regressions})
+    findings = compare(DEMO_DIR / "base", DEMO_DIR / "buggy")
+    _set_status(run_id, "done", result={"findings": findings})

@@ -17,6 +17,11 @@ def create_item(item: Item):
 
 @app.get("/items/{item_id}")
 def get_item(item_id: int):
-    if item_id == 999:
+    if item_id < 0:
         raise HTTPException(status_code=404, detail="item not found")
     return {"item_id": item_id}
+
+
+@app.get("/items")
+def list_items(limit: int = 10):
+    return {"limit": limit}

@@ -49,7 +49,12 @@ class RunningApp:
 
 def _run_case(base_url: str, case: dict) -> dict:
     with httpx.Client() as client:
-        resp = client.request(case["method"], f"{base_url}{case['path']}", json=case.get("json"))
+        resp = client.request(
+            case["method"],
+            f"{base_url}{case['path']}",
+            json=case.get("json"),
+            params=case.get("query"),
+        )
     try:
         body = resp.json()
     except ValueError:
@@ -60,8 +65,16 @@ def _run_case(base_url: str, case: dict) -> dict:
 def compare(base_dir: Path, pr_dir: Path) -> list[dict]:
     """Diff both apps' OpenAPI specs to find changed endpoints/fields, generate
     edge-case requests targeted at those changes, run them against both apps,
-    and return only requests where base succeeded and the PR branch failed
-    (the spec's regression definition).
+    and return findings where behavior differed between base and PR:
+
+    - "regression": base succeeded (2xx), PR failed — the spec's core case
+    - "status_code_changed": the status code differs some other way (e.g. a
+      404 silently becoming a 200) — still worth surfacing even though it
+      isn't a pass-to-fail flip, per the spec's own "404 -> 200" example
+
+    Requests where both branches return the same status code (both pass, or
+    both fail identically) are dropped — nothing changed, or it's pre-existing
+    and not this PR's fault.
     """
     base_app = RunningApp(base_dir)
     pr_app = RunningApp(pr_dir)
@@ -73,26 +86,34 @@ def compare(base_dir: Path, pr_dir: Path) -> list[dict]:
         pr_spec = httpx.get(f"{pr_app.base_url}/openapi.json").json()
         cases = generate_cases(base_spec, pr_spec)
 
-        regressions = []
+        findings = []
         for case in cases:
             base_result = _run_case(base_app.base_url, case)
             pr_result = _run_case(pr_app.base_url, case)
             base_ok = 200 <= base_result["status_code"] < 300
             pr_ok = 200 <= pr_result["status_code"] < 300
+
             if base_ok and not pr_ok:
-                regressions.append(
-                    {
-                        "case": case["name"],
-                        "request": {
-                            "method": case["method"],
-                            "path": case["path"],
-                            "json": case.get("json"),
-                        },
-                        "base_response": base_result,
-                        "pr_response": pr_result,
-                    }
-                )
-        return regressions
+                kind = "regression"
+            elif base_result["status_code"] != pr_result["status_code"]:
+                kind = "status_code_changed"
+            else:
+                continue
+
+            findings.append(
+                {
+                    "kind": kind,
+                    "case": case["name"],
+                    "request": {
+                        "method": case["method"],
+                        "path": case["path"],
+                        "json": case.get("json"),
+                    },
+                    "base_response": base_result,
+                    "pr_response": pr_result,
+                }
+            )
+        return findings
     finally:
         base_app.stop()
         pr_app.stop()
