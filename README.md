@@ -20,8 +20,11 @@ the real base-vs-PR comparison engine (spec Phase 1) once that exists.
 docker compose up -d          # Postgres on localhost:5432
 python3 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
-./.venv/bin/procrastinate --app app.procrastinate_app.procrastinate_app schema --apply
+PYTHONPATH=. ./.venv/bin/python -m procrastinate --app app.procrastinate_app.procrastinate_app schema --apply
 ```
+
+(`PYTHONPATH=.` / `python -m` is needed so the `app` package resolves — the
+plain `procrastinate` console script doesn't add the cwd to `sys.path`.)
 
 Run the API (creates the `runs` table on startup):
 
@@ -32,7 +35,7 @@ Run the API (creates the `runs` table on startup):
 Run the worker in a separate terminal:
 
 ```bash
-./.venv/bin/procrastinate --app app.procrastinate_app.procrastinate_app worker
+PYTHONPATH=. ./.venv/bin/python -m procrastinate --app app.procrastinate_app.procrastinate_app worker
 ```
 
 Try it:

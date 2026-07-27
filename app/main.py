@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from app.db import get_connection, init_schema
+from app.procrastinate_app import procrastinate_app
 from app.tasks import run_comparison
 
 app = FastAPI(title="CodeDelta")
@@ -10,6 +11,12 @@ app = FastAPI(title="CodeDelta")
 @app.on_event("startup")
 def startup() -> None:
     init_schema()
+    procrastinate_app.open()
+
+
+@app.on_event("shutdown")
+def shutdown() -> None:
+    procrastinate_app.close()
 
 
 class CreateRunRequest(BaseModel):
