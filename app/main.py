@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from app.db import get_connection, init_schema
@@ -8,6 +9,16 @@ from app.webhook import router as webhook_router
 
 app = FastAPI(title="CodeDelta")
 app.include_router(webhook_router)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://codedelta-frontend.amansriven757.workers.dev",
+        "http://localhost:3000",
+    ],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.on_event("startup")
@@ -56,9 +67,28 @@ def get_run(run_id: int):
 def list_runs():
     with get_connection() as conn:
         rows = conn.execute(
-            "SELECT id, repo, pr_number, status, created_at FROM runs ORDER BY id DESC LIMIT 50"
+            """
+            SELECT
+                id, repo, pr_number, status, created_at,
+                CASE WHEN result IS NOT NULL
+                    THEN jsonb_array_length(result->'findings')
+                END AS finding_count,
+                CASE
+                    WHEN result IS NULL THEN NULL
+                    WHEN EXISTS (
+                        SELECT 1 FROM jsonb_array_elements(result->'findings') f
+                        WHERE f->>'kind' = 'regression'
+                    ) THEN 'regression'
+                    WHEN jsonb_array_length(result->'findings') > 0 THEN 'status_code_changed'
+                    ELSE 'none'
+                END AS highest_severity
+            FROM runs ORDER BY id DESC LIMIT 50
+            """
         ).fetchall()
-    keys = ["id", "repo", "pr_number", "status", "created_at"]
+    keys = [
+        "id", "repo", "pr_number", "status", "created_at",
+        "finding_count", "highest_severity",
+    ]
     return [dict(zip(keys, r)) for r in rows]
 
 
