@@ -2,3 +2,19 @@
 __pycache__/
 *.pyc
 .env
+
+# frontend (Next.js / Cloudflare Workers)
+frontend/node_modules/
+frontend/.next/
+frontend/.vinext/
+frontend/out/
+frontend/coverage/
+frontend/dist/
+frontend/.wrangler/
+frontend/.vercel/
+frontend/*.tsbuildinfo
+frontend/next-env.d.ts
+frontend/.env*
+frontend/*.pem
+frontend/.DS_Store
+frontend/.openai/
