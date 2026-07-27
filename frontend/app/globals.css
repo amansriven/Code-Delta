@@ -930,6 +930,13 @@ select:focus-visible {
   font-family: inherit;
 }
 
+.avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
 .account-menu {
   position: relative;
 }
@@ -1137,6 +1144,30 @@ select:focus-visible {
 .filters {
   display: flex;
   gap: 8px;
+}
+
+.view-toggle {
+  height: 38px;
+  display: flex;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #0c1218;
+}
+
+.view-toggle button {
+  padding: 0 10px;
+  border: 0;
+  border-radius: 5px;
+  color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.view-toggle button.active {
+  color: var(--text);
+  background: var(--surface-hover);
 }
 
 .search-field,
@@ -1362,6 +1393,68 @@ select:focus-visible {
   font-size: 10px;
 }
 
+.repo-groups {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.data-window-note {
+  margin: 2px 5px 0;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.repo-group {
+  overflow: hidden;
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  background: rgba(17, 24, 33, 0.55);
+}
+
+.repo-group-header {
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 18px;
+}
+
+.repo-group-header dl {
+  display: flex;
+  gap: 34px;
+  margin: 0;
+}
+
+.repo-group-header dl > div {
+  display: grid;
+  gap: 4px;
+  min-width: 64px;
+}
+
+.repo-group-header dt {
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 8px;
+}
+
+.repo-group-header dd {
+  margin: 0;
+  color: var(--text-soft);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.repo-group-header dd.summary-danger {
+  color: var(--danger);
+}
+
+.repo-group .runs-table-wrap {
+  border-top: 1px solid var(--border-soft);
+}
+
 .row-action {
   text-align: right;
 }
@@ -1477,6 +1570,19 @@ select:focus-visible {
   align-items: center;
   justify-content: space-between;
   gap: 30px;
+}
+
+.run-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.action-error {
+  margin: 12px 0 0;
+  color: var(--danger);
+  font-size: 11px;
+  text-align: right;
 }
 
 .run-title {
@@ -1692,6 +1798,38 @@ select:focus-visible {
   background: var(--danger-soft);
 }
 
+.detail-error > div {
+  min-width: 0;
+  width: min(100%, 880px);
+}
+
+.traceback {
+  margin-top: 12px;
+}
+
+.traceback summary {
+  width: max-content;
+  color: #ffaaa3;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.traceback pre {
+  max-height: 330px;
+  margin: 10px 0 0;
+  padding: 15px;
+  overflow: auto;
+  border: 1px solid rgba(255, 123, 114, 0.2);
+  border-radius: 8px;
+  color: #efb0ac;
+  background: #100c0e;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1.55;
+}
+
 .findings-section {
   margin-top: 46px;
 }
@@ -1874,6 +2012,49 @@ select:focus-visible {
   margin-top: 34px;
 }
 
+.settings-tabs {
+  display: flex;
+  gap: 6px;
+  margin-top: 28px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.settings-tabs a {
+  position: relative;
+  padding: 12px 15px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.settings-tabs a:hover,
+.settings-tabs a.active {
+  color: var(--text);
+}
+
+.settings-tabs a.active::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  bottom: -1px;
+  left: 12px;
+  height: 2px;
+  background: var(--accent);
+}
+
+.settings-loading {
+  min-height: 240px;
+}
+
+.settings-signin {
+  margin-top: 24px;
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+}
+
+.settings-signin .button {
+  margin-top: 18px;
+}
+
 .integration-card {
   display: grid;
   grid-template-columns: 56px 1fr;
@@ -1919,6 +2100,14 @@ select:focus-visible {
   background: var(--running);
 }
 
+.integration-state.connected {
+  color: var(--success);
+}
+
+.integration-state.connected i {
+  background: var(--success);
+}
+
 .identity-row,
 .repository-list {
   padding: 14px;
@@ -1940,6 +2129,25 @@ select:focus-visible {
   margin-top: 3px;
   color: var(--text-muted);
   font-size: 10px;
+}
+
+.identity-row a {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-muted);
+  font-size: 10px;
+}
+
+.identity-row a:hover {
+  color: var(--accent);
+}
+
+.settings-avatar {
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  object-fit: cover;
 }
 
 .repository-list {
@@ -1967,6 +2175,44 @@ select:focus-visible {
   color: var(--text-muted);
   font-style: normal;
   font-size: 7px;
+}
+
+.repository-empty {
+  display: grid;
+  gap: 5px;
+}
+
+.repository-empty strong {
+  font-size: 11px;
+}
+
+.repository-empty small {
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.install-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 24px;
+  border: 1px solid rgba(112, 214, 231, 0.18);
+  border-radius: 12px;
+  background: var(--accent-soft);
+}
+
+.install-card h2 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.install-card p {
+  margin: 0;
+  color: #90aeb6;
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .security-note {
@@ -2234,10 +2480,22 @@ select:focus-visible {
 
   .filters {
     width: 100%;
+    flex-wrap: wrap;
   }
 
   .search-field {
     flex: 1;
+  }
+
+  .repo-group-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .repo-group-header dl {
+    width: 100%;
+    justify-content: space-between;
+    gap: 12px;
   }
 
   .runs-table-wrap {
@@ -2302,8 +2560,9 @@ select:focus-visible {
     font-size: 24px;
   }
 
-  .run-overview > .status-badge {
-    display: none;
+  .run-actions {
+    align-items: flex-end;
+    flex-direction: column;
   }
 
   .verdict-card {
@@ -2349,6 +2608,11 @@ select:focus-visible {
 
   .integration-card {
     grid-template-columns: 1fr;
+  }
+
+  .install-card {
+    align-items: stretch;
+    flex-direction: column;
   }
 }
 

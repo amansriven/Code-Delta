@@ -208,6 +208,26 @@ export async function fetchRun(
   return response.json();
 }
 
+export async function retryRun(
+  runId: number,
+): Promise<{ id: number; status: "pending" }> {
+  const response = await fetch(`${liveApiUrl}/runs/${runId}/retry`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (response.status === 401) {
+    throw new Error("Sign in with GitHub to retry this run.");
+  }
+  if (!response.ok) {
+    throw new Error(
+      response.status === 404
+        ? "This run could not be found."
+        : `Retry request failed with ${response.status}`,
+    );
+  }
+  return response.json();
+}
+
 export const githubLoginUrl = `${liveApiUrl}/auth/github/login`;
 
 export interface CurrentUser {

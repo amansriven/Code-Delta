@@ -15,10 +15,12 @@ import {
   RunDetail,
   RunStatus,
   RunSummary,
+  retryRun,
   signOut,
 } from "./lib/data";
 
 const PRODUCT_NAME = "Code Delta";
+const GITHUB_INSTALL_URL = "https://github.com/apps/codedeltaapp/installations/new";
 
 function Wordmark({ compact = false }: { compact?: boolean }) {
   return (
@@ -92,7 +94,11 @@ function AppHeader({ active }: { active: "runs" | "settings" }) {
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((open) => !open)}
             >
-              {initials}
+              {user?.avatar_url ? (
+                <img src={user.avatar_url} alt="" />
+              ) : (
+                initials
+              )}
             </button>
             {menuOpen && (
               <div className="account-dropdown" role="menu">
@@ -100,17 +106,22 @@ function AppHeader({ active }: { active: "runs" | "settings" }) {
                   {user ? user.login : "Not signed in"}
                 </span>
                 {user ? (
-                  <button
-                    type="button"
-                    role="menuitem"
-                    onClick={() => {
-                      signOut().finally(() => {
-                        window.location.href = "/";
-                      });
-                    }}
-                  >
-                    Sign out
-                  </button>
+                  <>
+                    <a role="menuitem" href="/settings/account">
+                      Account settings
+                    </a>
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        signOut().finally(() => {
+                          window.location.href = "/";
+                        });
+                      }}
+                    >
+                      Sign out
+                    </button>
+                  </>
                 ) : (
                   <a role="menuitem" href={githubLoginUrl}>
                     Sign in with GitHub
@@ -522,6 +533,7 @@ function RunsPage() {
   const [status, setStatus] = useState<"all" | RunStatus>("all");
   const [loading, setLoading] = useState(Boolean(liveApiUrl));
   const [error, setError] = useState("");
+  const [view, setView] = useState<"runs" | "repos">("runs");
 
   useEffect(() => {
     if (!liveApiUrl) return;
@@ -552,6 +564,27 @@ function RunsPage() {
     });
   }, [query, runs, status]);
 
+  const groupedRuns = useMemo(() => {
+    const groups = new Map<string, RunSummary[]>();
+    visibleRuns.forEach((run) => {
+      groups.set(run.repo, [...(groups.get(run.repo) ?? []), run]);
+    });
+    return [...groups.entries()]
+      .map(([repo, repoRuns]) => ({
+        repo,
+        runs: repoRuns,
+        regressions: repoRuns.filter((run) => run.highest_severity === "regression").length,
+        lastRun: repoRuns.reduce(
+          (latest, run) =>
+            new Date(run.created_at).getTime() > new Date(latest).getTime()
+              ? run.created_at
+              : latest,
+          repoRuns[0].created_at,
+        ),
+      }))
+      .sort((a, b) => new Date(b.lastRun).getTime() - new Date(a.lastRun).getTime());
+  }, [visibleRuns]);
+
   return (
     <main className="dashboard-page">
       <AppHeader active="runs" />
@@ -581,10 +614,28 @@ function RunsPage() {
         <section className="runs-panel" aria-labelledby="recent-runs-title">
           <div className="runs-panel-header">
             <div>
-              <h2 id="recent-runs-title">Recent runs</h2>
+              <h2 id="recent-runs-title">{view === "runs" ? "Recent runs" : "Repositories"}</h2>
               <span>{visibleRuns.length} shown</span>
             </div>
             <div className="filters">
+              <div className="view-toggle" aria-label="Runs view">
+                <button
+                  type="button"
+                  className={view === "runs" ? "active" : ""}
+                  aria-pressed={view === "runs"}
+                  onClick={() => setView("runs")}
+                >
+                  Runs
+                </button>
+                <button
+                  type="button"
+                  className={view === "repos" ? "active" : ""}
+                  aria-pressed={view === "repos"}
+                  onClick={() => setView("repos")}
+                >
+                  By repo
+                </button>
+              </div>
               <label className="search-field">
                 <span className="sr-only">Search runs</span>
                 <span aria-hidden="true">⌕</span>
@@ -628,12 +679,67 @@ function RunsPage() {
               <span className="loading-spinner" aria-hidden="true" />
               Loading verification runs…
             </div>
+          ) : view === "repos" ? (
+            <RepoGroups groups={groupedRuns} />
           ) : (
             <RunsTable runs={visibleRuns} />
           )}
         </section>
       </div>
     </main>
+  );
+}
+
+function RepoGroups({
+  groups,
+}: {
+  groups: Array<{
+    repo: string;
+    runs: RunSummary[];
+    regressions: number;
+    lastRun: string;
+  }>;
+}) {
+  if (groups.length === 0) {
+    return (
+      <div className="empty-state">
+        <span className="empty-icon" aria-hidden="true">Δ</span>
+        <h2>No repositories match this view</h2>
+        <p>Try clearing your search or choosing a different status.</p>
+      </div>
+    );
+  }
+  return (
+    <div className="repo-groups">
+      <p className="data-window-note">Based on the 50 most recent runs available.</p>
+      {groups.map((group) => {
+        const repo = repoParts(group.repo);
+        return (
+          <section className="repo-group" key={group.repo}>
+            <div className="repo-group-header">
+              <div className="repo-cell">
+                <span className="repo-mark" aria-hidden="true">
+                  {repo.name.slice(0, 2).toUpperCase()}
+                </span>
+                <span>
+                  <strong>{repo.name}</strong>
+                  <small>{repo.owner}</small>
+                </span>
+              </div>
+              <dl>
+                <div><dt>Runs</dt><dd>{group.runs.length}</dd></div>
+                <div><dt>Regressions</dt><dd className={group.regressions ? "summary-danger" : ""}>{group.regressions}</dd></div>
+                <div>
+                  <dt>Last run</dt>
+                  <dd title={new Date(group.lastRun).toLocaleString()}>{formatRelativeDate(group.lastRun)}</dd>
+                </div>
+              </dl>
+            </div>
+            <RunsTable runs={group.runs} />
+          </section>
+        );
+      })}
+    </div>
   );
 }
 
@@ -749,7 +855,14 @@ function RunState({ run }: { run: RunDetail }) {
         <span aria-hidden="true">!</span>
         <div>
           <h2>This verification run failed</h2>
-          <p>{run.error || "The backend did not provide an error message."}</p>
+          {run.error ? (
+            <details className="traceback" open>
+              <summary>Error details</summary>
+              <pre>{run.error}</pre>
+            </details>
+          ) : (
+            <p>The backend did not provide an error message.</p>
+          )}
         </div>
       </div>
     );
@@ -771,6 +884,9 @@ function RunDetailPage({ runId }: { runId: number }) {
   const [run, setRun] = useState<RunDetail | undefined>(fallback);
   const [loading, setLoading] = useState(Boolean(liveApiUrl));
   const [error, setError] = useState("");
+  const [retrying, setRetrying] = useState(false);
+  const [retryError, setRetryError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     if (!liveApiUrl || !Number.isFinite(runId)) return;
@@ -800,7 +916,24 @@ function RunDetailPage({ runId }: { runId: number }) {
       controller.abort();
       if (timer) clearTimeout(timer);
     };
-  }, [runId]);
+  }, [reloadKey, runId]);
+
+  const handleRetry = async () => {
+    if (!liveApiUrl) return;
+    setRetrying(true);
+    setRetryError("");
+    try {
+      await retryRun(runId);
+      setRun((current) =>
+        current ? { ...current, status: "pending", result: null, error: undefined } : current,
+      );
+      setReloadKey((key) => key + 1);
+    } catch (reason) {
+      setRetryError(reason instanceof Error ? reason.message : "The run could not be retried.");
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -861,8 +994,21 @@ function RunDetailPage({ runId }: { runId: number }) {
               </div>
             </div>
           </div>
-          <StatusBadge status={run.status} />
+          <div className="run-actions">
+            <StatusBadge status={run.status} />
+            {liveApiUrl && (
+              <button
+                className="button button-quiet button-small"
+                type="button"
+                disabled={retrying || run.status === "pending" || run.status === "running"}
+                onClick={handleRetry}
+              >
+                {retrying ? "Retrying…" : "Retry run"}
+              </button>
+            )}
+          </div>
         </section>
+        {retryError && <p className="action-error" role="alert">{retryError}</p>}
         <section
           className={`verdict-card ${
             regressions > 0 ? "verdict-card-danger" : findings.length ? "verdict-card-warning" : "verdict-card-safe"
@@ -875,7 +1021,9 @@ function RunDetailPage({ runId }: { runId: number }) {
             <span>Verification verdict</span>
             <h2>
               {run.status !== "done"
-                ? "Verification in progress"
+                ? run.status === "failed"
+                  ? "Verification failed"
+                  : "Verification in progress"
                 : regressions > 0
                   ? `${regressions} regression reproduced`
                   : findings.length
@@ -894,13 +1042,13 @@ function RunDetailPage({ runId }: { runId: number }) {
             <span>
               Base
               <code>{run.base_ref || "base"}</code>
-              <small>{run.base_sha || "—"}</small>
+              <small title={run.base_sha}>{run.base_sha?.slice(0, 7) || "—"}</small>
             </span>
             <i aria-hidden="true">→</i>
             <span>
               Pull request
               <code>{run.head_ref || "head"}</code>
-              <small>{run.head_sha || "—"}</small>
+              <small title={run.head_sha}>{run.head_sha?.slice(0, 7) || "—"}</small>
             </span>
           </div>
         </section>
@@ -934,7 +1082,20 @@ function RunDetailPage({ runId }: { runId: number }) {
   );
 }
 
-function IntegrationsPage() {
+function SettingsPage({ tab }: { tab: "account" | "repositories" }) {
+  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [loading, setLoading] = useState(Boolean(liveApiUrl));
+
+  useEffect(() => {
+    if (!liveApiUrl) return;
+    const controller = new AbortController();
+    fetchMe(controller.signal)
+      .then(setUser)
+      .catch(() => setUser(null))
+      .finally(() => setLoading(false));
+    return () => controller.abort();
+  }, []);
+
   return (
     <main className="dashboard-page">
       <AppHeader active="settings" />
@@ -942,72 +1103,101 @@ function IntegrationsPage() {
         <div className="page-heading">
           <div>
             <span className="section-kicker">Workspace settings</span>
-            <h1>Integrations</h1>
+            <h1>Settings</h1>
             <p>Manage the identity and repository access CodeΔ uses.</p>
           </div>
         </div>
-        <div className="settings-grid">
+        <nav className="settings-tabs" aria-label="Settings sections">
+          <a className={tab === "account" ? "active" : ""} href="/settings/account">Account</a>
+          <a className={tab === "repositories" ? "active" : ""} href="/settings/integrations">Repositories</a>
+        </nav>
+        {loading ? (
+          <div className="loading-state settings-loading" role="status">
+            <span className="loading-spinner" aria-hidden="true" />
+            Loading settings…
+          </div>
+        ) : !user ? (
+          <div className="error-state settings-signin">
+            <span aria-hidden="true">!</span>
+            <div>
+              <h2>Sign in required</h2>
+              <p>Sign in with GitHub to manage your account and repository access.</p>
+              <a className="button button-primary" href={githubLoginUrl}>Continue with GitHub</a>
+            </div>
+          </div>
+        ) : tab === "account" ? (
+          <div className="settings-grid">
           <section className="integration-card">
             <div className="integration-logo" aria-hidden="true">
               GH
             </div>
             <div className="integration-main">
               <div>
-                <span className="integration-state preview">
-                  <i /> Preview identity
+                <span className="integration-state connected">
+                  <i /> Connected
                 </span>
                 <h2>GitHub account</h2>
-                <p>OAuth will identify the person accessing this dashboard.</p>
+                <p>Your GitHub identity controls access to this dashboard.</p>
               </div>
               <div className="identity-row">
-                <span className="avatar">AS</span>
+                {user.avatar_url ? (
+                  <img className="settings-avatar" src={user.avatar_url} alt="" />
+                ) : (
+                  <span className="avatar">{user.login.slice(0, 2).toUpperCase()}</span>
+                )}
                 <span>
-                  <strong>amansriven</strong>
-                  <small>Demo workspace owner</small>
+                  <strong>{user.login}</strong>
+                  <a href={`https://github.com/${user.login}`} target="_blank" rel="noreferrer">
+                    View GitHub profile ↗
+                  </a>
                 </span>
               </div>
             </div>
           </section>
+          </div>
+        ) : (
+          <div className="settings-grid">
           <section className="integration-card">
             <div className="integration-logo delta-logo" aria-hidden="true">
               Δ
             </div>
             <div className="integration-main">
               <div>
-                <span className="integration-state pending">
-                  <i /> Backend connection required
+                <span className="integration-state connected">
+                  <i /> {user.accessible_repos.length} connected
                 </span>
                 <h2>CodeΔ GitHub App</h2>
                 <p>The app receives PR events and publishes check-run evidence.</p>
               </div>
               <div className="repository-list">
-                <span>
-                  <i>CD</i>
-                  amansriven/codedelta-demo-app
-                </span>
-                <span>
-                  <i>IA</i>
-                  amansriven/inventory-api
-                </span>
-                <span>
-                  <i>+1</i>
-                  1 more preview repository
-                </span>
+                {user.accessible_repos.length ? user.accessible_repos.map((repo) => {
+                  const parts = repoParts(repo);
+                  return (
+                    <span key={repo}>
+                      <i>{parts.name.slice(0, 2).toUpperCase()}</i>
+                      {repo}
+                    </span>
+                  );
+                }) : (
+                  <div className="repository-empty">
+                    <strong>No repositories connected yet</strong>
+                    <small>Choose repositories in the GitHub App installation flow.</small>
+                  </div>
+                )}
               </div>
             </div>
           </section>
-        </div>
-        <section className="security-note">
-          <span aria-hidden="true">⌾</span>
-          <div>
-            <h2>Secure launch boundary</h2>
-            <p>
-              Before public deployment, the FastAPI backend needs OAuth callbacks,
-              HTTP-only sessions, and repository-level authorization. The interface
-              is ready for those endpoints without simulating security in the browser.
-            </p>
+          <section className="install-card">
+            <div>
+              <h2>Connect more repositories</h2>
+              <p>Grant CodeΔ access on GitHub. Newly selected repositories appear here when you return.</p>
+            </div>
+            <a className="button button-primary" href={GITHUB_INSTALL_URL} target="_blank" rel="noreferrer">
+              Install on more repos ↗
+            </a>
+          </section>
           </div>
-        </section>
+        )}
       </div>
     </main>
   );
@@ -1022,7 +1212,8 @@ export default function CodeDeltaApp({ route }: { route: string[] }) {
   if (path.startsWith("runs/")) {
     return <RunDetailPage runId={Number(path.split("/")[1])} />;
   }
-  if (path === "settings/integrations") return <IntegrationsPage />;
+  if (path === "settings" || path === "settings/account") return <SettingsPage tab="account" />;
+  if (path === "settings/integrations") return <SettingsPage tab="repositories" />;
   return (
     <main className="not-found-state standalone">
       <Wordmark />

@@ -38,24 +38,28 @@ test("server-renders the Code Delta landing page", async () => {
   assert.doesNotMatch(html, /react-loading-skeleton/);
 });
 
-test("server-renders dashboard and run-detail routes", async () => {
-  const [runsResponse, detailResponse] = await Promise.all([
+test("server-renders dashboard, run-detail, and settings routes", async () => {
+  const [runsResponse, detailResponse, settingsResponse] = await Promise.all([
     render("/runs"),
     render("/runs/14"),
+    render("/settings/integrations"),
   ]);
   assert.equal(runsResponse.status, 200);
   assert.equal(detailResponse.status, 200);
+  assert.equal(settingsResponse.status, 200);
 
-  const [runs, detail] = await Promise.all([
+  const [runs, detail, settings] = await Promise.all([
     runsResponse.text(),
     detailResponse.text(),
+    settingsResponse.text(),
   ]);
   assert.match(runs, /Recent runs/);
-  assert.match(runs, /codedelta-demo-app/);
-  assert.match(detail, /regression reproduced/i);
-  assert.match(detail, /omit discount/i);
-  assert.match(detail, /Base response/);
-  assert.match(detail, /PR response/);
+  assert.match(runs, /By repo/);
+  assert.match(runs, /Loading verification runs/);
+  assert.match(detail, /Loading run evidence/);
+  assert.match(settings, /Settings sections/);
+  assert.match(settings, /Repositories/);
+  assert.match(settings, /Loading settings/);
 });
 
 test("starter preview implementation is removed", async () => {
