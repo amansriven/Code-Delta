@@ -1,6 +1,6 @@
 # CodeDelta — Frontend/Dashboard Handoff
 
-Backend context for whoever builds the dashboard. Full product spec is in
+Backend context for building the dashboard. Full product spec is in
 [api-verifier-spec.md](api-verifier-spec.md); this doc is just the API
 surface and data shapes needed to build against it.
 
