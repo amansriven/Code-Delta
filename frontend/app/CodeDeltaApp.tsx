@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  CurrentUser,
   demoDetails,
   demoRuns,
+  fetchMe,
   fetchRun,
   fetchRuns,
   Finding,
@@ -13,6 +15,7 @@ import {
   RunDetail,
   RunStatus,
   RunSummary,
+  signOut,
 } from "./lib/data";
 
 const PRODUCT_NAME = "Code Delta";
@@ -52,6 +55,17 @@ function PublicHeader() {
 }
 
 function AppHeader({ active }: { active: "runs" | "settings" }) {
+  const [user, setUser] = useState<CurrentUser | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchMe(controller.signal).then(setUser).catch(() => setUser(null));
+    return () => controller.abort();
+  }, []);
+
+  const initials = user?.login ? user.login.slice(0, 2).toUpperCase() : "AS";
+
   return (
     <header className="app-header">
       <div className="app-header-inner">
@@ -69,8 +83,41 @@ function AppHeader({ active }: { active: "runs" | "settings" }) {
         </nav>
         <div className="account-cluster">
           {!liveApiUrl && <DemoPill />}
-          <div className="avatar" aria-label="Demo account">
-            AS
+          <div className="account-menu">
+            <button
+              type="button"
+              className="avatar"
+              aria-label={user ? `Signed in as ${user.login}` : "Account menu"}
+              aria-haspopup="true"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen((open) => !open)}
+            >
+              {initials}
+            </button>
+            {menuOpen && (
+              <div className="account-dropdown" role="menu">
+                <span className="account-dropdown-name">
+                  {user ? user.login : "Not signed in"}
+                </span>
+                {user ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => {
+                      signOut().finally(() => {
+                        window.location.href = "/";
+                      });
+                    }}
+                  >
+                    Sign out
+                  </button>
+                ) : (
+                  <a role="menuitem" href={githubLoginUrl}>
+                    Sign in with GitHub
+                  </a>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

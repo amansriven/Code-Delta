@@ -209,3 +209,27 @@ export async function fetchRun(
 }
 
 export const githubLoginUrl = `${liveApiUrl}/auth/github/login`;
+
+export interface CurrentUser {
+  login: string;
+  avatar_url: string | null;
+  accessible_repos: string[];
+}
+
+export async function fetchMe(signal?: AbortSignal): Promise<CurrentUser | null> {
+  if (!liveApiUrl) return null;
+  const response = await fetch(`${liveApiUrl}/auth/me`, {
+    signal,
+    credentials: "include",
+  });
+  if (!response.ok) return null;
+  return response.json();
+}
+
+export async function signOut(): Promise<void> {
+  await fetch(`${liveApiUrl}/auth/logout`, {
+    method: "POST",
+    credentials: "include",
+    redirect: "manual",
+  });
+}

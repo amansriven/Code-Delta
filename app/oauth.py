@@ -118,7 +118,11 @@ def logout(request: Request):
 @router.get("/me")
 def me(request: Request):
     session = get_session(request)
-    return {"login": session["github_login"], "avatar_url": session["avatar_url"]}
+    return {
+        "login": session["github_login"],
+        "avatar_url": session["avatar_url"],
+        "accessible_repos": session["accessible_repos"],
+    }
 
 
 def get_session(request: Request) -> dict:
