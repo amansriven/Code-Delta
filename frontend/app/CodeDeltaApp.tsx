@@ -2,7 +2,7 @@
 
 /* eslint-disable @next/next/no-html-link-for-pages -- Vinext's Next Link shim causes duplicate-React hydration failures in local development. */
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   CurrentUser,
   demoDetails,
@@ -225,34 +225,118 @@ function repoParts(repo: string) {
   return { owner: owner || "repository", name: name || repo };
 }
 
-function EvidencePreview() {
+function InteractiveLandingShell({ children }: { children: React.ReactNode }) {
+  const shellRef = useRef<HTMLDivElement>(null);
+
+  function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - bounds.left) / bounds.width) * 100;
+    const y = ((event.clientY - bounds.top) / bounds.height) * 100;
+    shellRef.current?.style.setProperty("--pointer-x", `${x}%`);
+    shellRef.current?.style.setProperty("--pointer-y", `${y}%`);
+  }
+
   return (
-    <div className="evidence-window" aria-label="Example reproduced regression">
+    <div
+      ref={shellRef}
+      className="landing-shell"
+      onPointerMove={handlePointerMove}
+      onPointerLeave={() => {
+        shellRef.current?.style.setProperty("--pointer-x", "72%");
+        shellRef.current?.style.setProperty("--pointer-y", "24%");
+      }}
+    >
+      <div className="cursor-aura" aria-hidden="true" />
+      <div className="aurora aurora-a" aria-hidden="true" />
+      <div className="aurora aurora-b" aria-hidden="true" />
+      <div className="mesh-grid" aria-hidden="true" />
+      <div className="constellation" aria-hidden="true">
+        <i /><i /><i /><i /><i /><i />
+        <span /><span /><span />
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function EvidencePreview() {
+  const scenarios = [
+    {
+      label: "Required field",
+      title: "PR #128 · verification",
+      state: "Regression",
+      kind: "regression" as const,
+      caseName: "omit_discount",
+      method: "POST",
+      path: "/items",
+      baseStatus: "201",
+      baseBody: '{ "discount": 0.0 }',
+      prStatus: "422",
+      prBody: '{ "detail": "Field required" }',
+    },
+    {
+      label: "Status drift",
+      title: "PR #204 · verification",
+      state: "Behavior changed",
+      kind: "status_code_changed" as const,
+      caseName: "unknown_user",
+      method: "GET",
+      path: "/users/unknown",
+      baseStatus: "404",
+      baseBody: '{ "detail": "Not found" }',
+      prStatus: "200",
+      prBody: '{ "id": null }',
+    },
+    {
+      label: "Safe change",
+      title: "PR #219 · verification",
+      state: "No regression",
+      kind: "safe" as const,
+      caseName: "health_contract",
+      method: "GET",
+      path: "/health",
+      baseStatus: "200",
+      baseBody: '{ "status": "ok" }',
+      prStatus: "200",
+      prBody: '{ "status": "ok" }',
+    },
+  ];
+  const [activeScenario, setActiveScenario] = useState(0);
+  const scenario = scenarios[activeScenario];
+
+  return (
+    <div className="evidence-window" aria-label="Interactive API behavior comparison">
       <div className="window-bar">
         <span className="window-lights" aria-hidden="true">
           <i />
           <i />
           <i />
         </span>
-        <span>PR #128 · verification</span>
-        <span className="verified-label">Reproduced</span>
+        <span>{scenario.title}</span>
+        <span className={`verified-label verified-${scenario.kind}`}>{scenario.state}</span>
       </div>
       <div className="evidence-content">
         <div className="finding-heading">
-          <SeverityBadge kind="regression" />
-          <span className="case-name">omit_discount</span>
+          {scenario.kind === "safe" ? (
+            <span className="severity-badge severity-safe"><span>✓</span>No regression</span>
+          ) : (
+            <SeverityBadge kind={scenario.kind} />
+          )}
+          <span className="case-name">{scenario.caseName}</span>
         </div>
         <div className="request-line">
-          <span className="method method-post">POST</span>
-          <code>/items</code>
+          <span className={`method method-${scenario.method.toLowerCase()}`}>{scenario.method}</span>
+          <code>{scenario.path}</code>
         </div>
         <div className="preview-compare">
           <div className="response-preview response-base">
             <div>
               <span>BASE</span>
-              <strong className="code-success">201</strong>
+              <strong className={scenario.baseStatus.startsWith("2") ? "code-success" : "code-danger"}>
+                {scenario.baseStatus}
+              </strong>
             </div>
-            <code>{`{ "discount": 0.0 }`}</code>
+            <code>{scenario.baseBody}</code>
           </div>
           <div className="compare-arrow" aria-hidden="true">
             →
@@ -260,10 +344,26 @@ function EvidencePreview() {
           <div className="response-preview response-pr">
             <div>
               <span>PR</span>
-              <strong className="code-danger">422</strong>
+              <strong className={scenario.prStatus === scenario.baseStatus ? "code-success" : "code-danger"}>
+                {scenario.prStatus}
+              </strong>
             </div>
-            <code>{`{ "detail": "Field required" }`}</code>
+            <code>{scenario.prBody}</code>
           </div>
+        </div>
+        <div className="scenario-switcher" aria-label="Comparison examples">
+          {scenarios.map((item, index) => (
+            <button
+              key={item.label}
+              type="button"
+              className={activeScenario === index ? "active" : ""}
+              aria-pressed={activeScenario === index}
+              onClick={() => setActiveScenario(index)}
+            >
+              <i aria-hidden="true" />
+              {item.label}
+            </button>
+          ))}
         </div>
       </div>
     </div>
@@ -273,10 +373,7 @@ function EvidencePreview() {
 function LandingPage() {
   return (
     <main className="public-page">
-      <div className="landing-shell">
-        <div className="aurora aurora-a" aria-hidden="true" />
-        <div className="aurora aurora-b" aria-hidden="true" />
-        <div className="mesh-grid" aria-hidden="true" />
+      <InteractiveLandingShell>
         <PublicHeader />
         <section className="hero">
           <div className="hero-copy">
@@ -326,7 +423,7 @@ function LandingPage() {
             <b>PYTHON</b>
           </div>
         </div>
-      </div>
+      </InteractiveLandingShell>
 
       <section className="story-section">
         <div className="section-heading centered-heading">
