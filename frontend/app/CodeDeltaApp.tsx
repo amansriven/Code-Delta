@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable @next/next/no-html-link-for-pages -- Vinext's Next Link shim causes duplicate-React hydration failures in local development. */
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import {
   CurrentUser,
@@ -95,7 +97,7 @@ function AppHeader({ active }: { active: "runs" | "settings" }) {
               onClick={() => setMenuOpen((open) => !open)}
             >
               {user?.avatar_url ? (
-                <img src={user.avatar_url} alt="" />
+                <Image src={user.avatar_url} alt="" width={32} height={32} />
               ) : (
                 initials
               )}
@@ -406,7 +408,7 @@ function DashboardSummary({ runs }: { runs: RunSummary[] }) {
       <article>
         <span>PRs verified</span>
         <strong>{completed.length}</strong>
-        <small>in this preview</small>
+        <small>{liveApiUrl ? "across recent runs" : "in this preview"}</small>
       </article>
       <article>
         <span>Regressions reproduced</span>
@@ -984,13 +986,17 @@ function RunDetailPage({ runId }: { runId: number }) {
               <div className="run-subtitle">
                 <span>Run #{run.id}</span>
                 <span>·</span>
-                <a
-                  href={`https://github.com/${run.repo}/pull/${run.pr_number}`}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Pull request #{run.pr_number} ↗
-                </a>
+                {run.pr_number ? (
+                  <a
+                    href={`https://github.com/${run.repo}/pull/${run.pr_number}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Pull request #{run.pr_number} ↗
+                  </a>
+                ) : (
+                  <span>Manual run</span>
+                )}
               </div>
             </div>
           </div>
@@ -1011,11 +1017,23 @@ function RunDetailPage({ runId }: { runId: number }) {
         {retryError && <p className="action-error" role="alert">{retryError}</p>}
         <section
           className={`verdict-card ${
-            regressions > 0 ? "verdict-card-danger" : findings.length ? "verdict-card-warning" : "verdict-card-safe"
+            run.status === "failed" || regressions > 0
+              ? "verdict-card-danger"
+              : findings.length
+                ? "verdict-card-warning"
+                : run.status === "done"
+                  ? "verdict-card-safe"
+                  : ""
           }`}
         >
           <div className="verdict-icon" aria-hidden="true">
-            {regressions > 0 ? "!" : findings.length ? "↕" : "✓"}
+            {run.status === "failed" || regressions > 0
+              ? "!"
+              : findings.length
+                ? "↕"
+                : run.status === "done"
+                  ? "✓"
+                  : "…"}
           </div>
           <div>
             <span>Verification verdict</span>
@@ -1141,7 +1159,13 @@ function SettingsPage({ tab }: { tab: "account" | "repositories" }) {
               </div>
               <div className="identity-row">
                 {user.avatar_url ? (
-                  <img className="settings-avatar" src={user.avatar_url} alt="" />
+                  <Image
+                    className="settings-avatar"
+                    src={user.avatar_url}
+                    alt=""
+                    width={38}
+                    height={38}
+                  />
                 ) : (
                   <span className="avatar">{user.login.slice(0, 2).toUpperCase()}</span>
                 )}

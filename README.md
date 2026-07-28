@@ -110,6 +110,9 @@ and return while a separate worker performs the comparison.
 - Demo FastAPI applications with intentionally introduced regressions.
 - Responsive dashboard for run history and side-by-side response evidence.
 - Clearly distinguished regressions and non-regression behavior changes.
+- GitHub OAuth sessions with repository-scoped dashboard authorization.
+- Optional Ollama-assisted case generation and finding explanations, with a
+  deterministic fallback when no model is configured.
 
 ## Supported repositories
 
@@ -133,20 +136,29 @@ CodeDelta/
 │   ├── webhook.py           # GitHub webhook receiver
 │   ├── tasks.py             # Background comparison jobs
 │   ├── engine.py            # Base-vs-PR execution and response comparison
+│   ├── cases.py             # Stable request-case identity and provenance
 │   ├── openapi_diff.py      # Changed-surface detection and case generation
+│   ├── llm.py               # Optional LLM case and explanation enrichment
 │   ├── repo_fetch.py        # Base/head repository checkout
 │   ├── github_client.py     # GitHub authentication and Check Runs
 │   └── db.py                # PostgreSQL schema and connection
 ├── demo_apps/               # Base app plus intentionally broken variants
 ├── frontend/                # CodeΔ landing page and dashboard
 ├── docs/assets/brand/       # Repository-safe brand artwork
+├── tests/                   # Unit and end-to-end engine tests
 ├── api-verifier-spec.md     # Product scope and design rationale
 ├── frontend-handoff.md      # Backend API shapes for the dashboard
 ├── docker-compose.yml       # Local PostgreSQL
+├── pyproject.toml           # Python package, test, and lint configuration
 └── requirements.txt
 ```
 
 ## Quick start
+
+For a command-oriented setup and deployment guide, see
+[docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md). The root Makefile
+provides `make setup`, `make test`, local service commands, and deployment
+helpers.
 
 ### Prerequisites
 
@@ -171,7 +183,7 @@ postgresql://codedelta:codedelta@localhost:5432/codedelta
 
 ```bash
 python3 -m venv .venv
-./.venv/bin/pip install -r requirements.txt
+./.venv/bin/pip install -e ".[dev]"
 PYTHONPATH=. ./.venv/bin/python -m procrastinate \
   --app app.procrastinate_app.procrastinate_app schema --apply
 ```
@@ -217,10 +229,28 @@ Open `http://localhost:3000`. The dashboard uses clearly labeled preview data
 by default. Set `NEXT_PUBLIC_CODEDELTA_API_URL` when connecting it to a hosted
 API with the appropriate CORS and authentication configuration.
 
+## Tests and quality checks
+
+```bash
+./.venv/bin/ruff check app tests
+./.venv/bin/pytest -q
+
+cd frontend
+npm run lint
+npm test
+```
+
+GitHub Actions runs the same backend and frontend checks for pull requests and
+pushes to `main`.
+
 ## API overview
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |
+| `GET` | `/health` | Return the web service liveness status. |
+| `GET` | `/auth/me` | Return the signed-in GitHub identity and accessible repositories. |
+| `GET` | `/auth/github/login` | Begin the GitHub OAuth sign-in flow. |
+| `POST` | `/auth/logout` | End the current dashboard session. |
 | `GET` | `/runs` | Return the 50 most recent runs. |
 | `GET` | `/runs/{id}` | Return a run and its reproduced findings. |
 | `POST` | `/runs` | Create a manual comparison run for local testing. |
@@ -293,6 +323,12 @@ dashboard.
 | `GITHUB_APP_ID` | GitHub integration | Numeric ID of the repository GitHub App. |
 | `GITHUB_PRIVATE_KEY` | GitHub integration | Full PEM private key used to create installation tokens. |
 | `GITHUB_WEBHOOK_SECRET` | GitHub integration | Secret used to validate webhook signatures. |
+| `GITHUB_OAUTH_CLIENT_ID` | Dashboard login | Client ID for the GitHub OAuth App. |
+| `GITHUB_OAUTH_CLIENT_SECRET` | Dashboard login | Client secret for the GitHub OAuth App. |
+| `GITHUB_OAUTH_CALLBACK_URL` | Dashboard login | Public backend OAuth callback URL. |
+| `FRONTEND_URL` | Hosted backend | Public frontend URL used after login and logout. |
+| `OLLAMA_URL` | Optional AI | Ollama-compatible API base URL. |
+| `OLLAMA_MODEL` | Optional AI | Model used to enrich generated cases and explanations. |
 | `NEXT_PUBLIC_CODEDELTA_API_URL` | Hosted frontend | Public base URL of the CodeΔ API. |
 
 Example local configuration:
@@ -308,18 +344,12 @@ credentials.
 
 ## Product boundaries and security
 
-The backend does not yet provide hosted user authentication or
-repository-level authorization. Do not expose `/runs` publicly until the
-production service includes:
-
-- a separate GitHub OAuth App for user login;
-- secure server-side sessions;
-- repository access checks on every run endpoint;
-- production CORS, cookie, and CSRF policies.
-
-The repository GitHub App already handles webhooks and Check Runs. User login
-is a distinct integration and should not reuse the installation-token flow as
-dashboard authentication.
+The GitHub App handles repository webhooks and Check Runs. A separate GitHub
+OAuth App signs users into the dashboard. Run reads and retries are restricted
+to repositories returned by the signed-in user's matching GitHub App
+installations. Production credentials must remain in the hosting platforms'
+secret stores, and the authenticated API should only be called from an allowed
+frontend origin.
 
 ## Roadmap
 
@@ -330,10 +360,11 @@ dashboard authentication.
 - [x] PostgreSQL-backed job queue
 - [x] Failure state and run retries
 - [x] Dashboard experience
-- [ ] Production backend deployment
-- [ ] GitHub OAuth and secure sessions
-- [ ] Repository-level dashboard authorization
-- [ ] Hosted frontend-to-API integration
+- [x] Production backend deployment
+- [x] GitHub OAuth and secure sessions
+- [x] Repository-level dashboard authorization
+- [x] Hosted frontend-to-API integration
+- [x] Optional LLM-assisted case generation and explanations
 - [ ] Pagination, filtering, and operational monitoring
 
 ## Brand assets

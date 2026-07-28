@@ -25,6 +25,12 @@ app.add_middleware(
 )
 
 
+@app.get("/health", include_in_schema=False)
+def health() -> dict[str, str]:
+    """Return a lightweight liveness signal for the web service."""
+    return {"status": "ok"}
+
+
 @app.on_event("startup")
 def startup() -> None:
     init_schema()

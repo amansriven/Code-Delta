@@ -39,5 +39,6 @@ next-env.d.ts
 *.tsbuildinfo
 /dist/
 /.wrangler/
+/worker-configuration.d.ts
 /outputs/
 /work/
