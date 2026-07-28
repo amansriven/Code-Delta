@@ -225,6 +225,41 @@ function repoParts(repo: string) {
   return { owner: owner || "repository", name: name || repo };
 }
 
+function ExperienceShell({ children }: { children: React.ReactNode }) {
+  const shellRef = useRef<HTMLDivElement>(null);
+
+  function handlePointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    const x = (event.clientX / window.innerWidth) * 100;
+    const y = (event.clientY / window.innerHeight) * 100;
+    shellRef.current?.style.setProperty("--experience-x", `${x}%`);
+    shellRef.current?.style.setProperty("--experience-y", `${y}%`);
+  }
+
+  return (
+    <div
+      ref={shellRef}
+      className="experience-shell"
+      onPointerMove={handlePointerMove}
+      onPointerLeave={() => {
+        shellRef.current?.style.setProperty("--experience-x", "76%");
+        shellRef.current?.style.setProperty("--experience-y", "18%");
+      }}
+    >
+      <div className="experience-backdrop" aria-hidden="true">
+        <span className="experience-spotlight" />
+        <span className="experience-orb experience-orb-one" />
+        <span className="experience-orb experience-orb-two" />
+        <span className="experience-orb experience-orb-three" />
+        <span className="experience-grid" />
+        <span className="data-lane data-lane-one"><i /></span>
+        <span className="data-lane data-lane-two"><i /></span>
+        <span className="data-lane data-lane-three"><i /></span>
+      </div>
+      <div className="experience-content">{children}</div>
+    </div>
+  );
+}
+
 function InteractiveLandingShell({ children }: { children: React.ReactNode }) {
   const shellRef = useRef<HTMLDivElement>(null);
 
@@ -1637,28 +1672,35 @@ function SettingsPage({ tab }: { tab: "account" | "repositories" }) {
 
 export default function CodeDeltaApp({ route }: { route: string[] }) {
   const path = route.join("/");
-  if (!path) return <LandingPage />;
-  if (path === "product") return <ProductPage />;
-  if (path === "how-it-works") return <WorkflowPage />;
-  if (path === "docs") return <DocsPage />;
-  if (path === "security") return <SecurityPage />;
-  if (path === "login") return <LoginPage />;
-  if (path === "onboarding") return <OnboardingPage />;
-  if (path === "runs") return <RunsPage />;
+  let page: React.ReactNode = null;
+
+  if (!path) page = <LandingPage />;
+  else if (path === "product") page = <ProductPage />;
+  else if (path === "how-it-works") page = <WorkflowPage />;
+  else if (path === "docs") page = <DocsPage />;
+  else if (path === "security") page = <SecurityPage />;
+  else if (path === "login") page = <LoginPage />;
+  else if (path === "onboarding") page = <OnboardingPage />;
+  else if (path === "runs") page = <RunsPage />;
   if (path.startsWith("runs/")) {
-    return <RunDetailPage runId={Number(path.split("/")[1])} />;
+    page = <RunDetailPage runId={Number(path.split("/")[1])} />;
+  } else if (path === "settings" || path === "settings/account") {
+    page = <SettingsPage tab="account" />;
+  } else if (path === "settings/integrations") {
+    page = <SettingsPage tab="repositories" />;
+  } else if (!page) {
+    page = (
+      <main className="not-found-state standalone">
+        <Wordmark />
+        <span aria-hidden="true">404</span>
+        <h1>That page isn’t part of CodeΔ.</h1>
+        <p>The route may have moved or never existed.</p>
+        <a className="button button-primary" href="/">
+          Return home
+        </a>
+      </main>
+    );
   }
-  if (path === "settings" || path === "settings/account") return <SettingsPage tab="account" />;
-  if (path === "settings/integrations") return <SettingsPage tab="repositories" />;
-  return (
-    <main className="not-found-state standalone">
-      <Wordmark />
-      <span aria-hidden="true">404</span>
-      <h1>That page isn’t part of CodeΔ.</h1>
-      <p>The route may have moved or never existed.</p>
-      <a className="button button-primary" href="/">
-        Return home
-      </a>
-    </main>
-  );
+
+  return <ExperienceShell>{page}</ExperienceShell>;
 }
