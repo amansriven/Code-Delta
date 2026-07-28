@@ -18,4 +18,5 @@ frontend/next-env.d.ts
 frontend/.env*
 frontend/*.pem
 frontend/.DS_Store
-frontend/.openai/
+frontend/.openai/*
+!frontend/.openai/hosting.json
