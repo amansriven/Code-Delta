@@ -32,12 +32,20 @@ account/repo management surface. Four features, roughly in priority order.
 {
   "login": "amansriven",
   "avatar_url": "https://avatars.githubusercontent.com/u/189822438?v=4",
-  "accessible_repos": ["amansriven/codedelta-demo-app"]
+  "accessible_repos": ["amansriven/codedelta-demo-app"],
+  "repositories": [
+    {
+      "full_name": "amansriven/codedelta-demo-app",
+      "private": false,
+      "visibility": "public"
+    }
+  ]
 }
 ```
 401 if not signed in. `accessible_repos` is exactly the repos the signed-in
 user can access through the CodeDeltaApp GitHub App installation(s) they're a
-member of.
+member of. `repositories` carries the same access list with visibility
+metadata for the settings UI.
 
 ### `GET /runs/{id}` (now includes branch info)
 ```json
@@ -71,8 +79,9 @@ at 50 most recent, filtered to accessible repos.
 No backend endpoint needed — GitHub's own install page handles this:
 `https://github.com/apps/codedeltaapp/installations/new`. Opening it in a new
 tab and letting the user pick repos is sufficient; there's no callback needed
-since the next `fetchMe()` call will naturally reflect newly granted repos
-(installations propagate near-instantly).
+for the installation itself. After changing the selection, repeat GitHub
+authorization from the settings page so the server can refresh the
+repository-scoped session.
 
 ## Feature 1: Make Integrations functional
 

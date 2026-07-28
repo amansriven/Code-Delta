@@ -300,9 +300,9 @@ have the following shape:
 
 ## GitHub App setup
 
-The existing GitHub App integration handles repository events and Check Runs.
-It is separate from the future GitHub OAuth App used to sign users into the
-dashboard.
+The GitHub App integration handles repository events, authenticated repository
+checkouts, and Check Runs. Its user authorization flow also signs users into
+the dashboard and discovers the app installations they can access.
 
 <details>
 <summary><strong>Configure the repository GitHub App</strong></summary>
@@ -312,6 +312,7 @@ dashboard.
    `https://your-api.example.com/webhooks/github`.
 3. Generate a webhook secret.
 4. Grant these repository permissions:
+   - **Contents:** Read-only
    - **Pull requests:** Read-only
    - **Checks:** Read and write
    - **Metadata:** Read-only
@@ -319,6 +320,12 @@ dashboard.
 6. Generate a private key and install the app on a test repository.
 7. Configure the environment variables below before starting the API and
    worker.
+
+For private repositories, an owner or organization administrator must include
+the repository when installing or updating the app. The worker creates a
+short-lived installation token and uses it only to fetch the exact base and
+pull-request revisions. The dashboard repository settings page identifies
+public and private repositories separately.
 
 </details>
 
@@ -357,6 +364,12 @@ to repositories returned by the signed-in user's matching GitHub App
 installations. Production credentials must remain in the hosting platforms'
 secret stores, and the authenticated API should only be called from an allowed
 frontend origin.
+
+The current MVP starts checked-out pull-request code directly inside the worker
+process environment. Treat installations as trusted-development use only until
+repository execution is isolated from worker credentials, networking, and the
+host filesystem. Private checkout support does not by itself provide that
+runtime sandbox.
 
 ## Roadmap
 

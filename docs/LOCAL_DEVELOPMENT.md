@@ -83,6 +83,11 @@ export FRONTEND_URL="http://localhost:3000"
 Do not commit those values. Basic pages and the signed-out live-API state work
 without GitHub credentials.
 
+Private repository verification additionally requires the GitHub App to have
+read-only **Contents** permission. Install or update the app on the private
+repository, then use **Refresh repository access** in the dashboard settings
+to repeat GitHub authorization and refresh the session's repository list.
+
 ## Test and build
 
 Run the same checks used in CI:

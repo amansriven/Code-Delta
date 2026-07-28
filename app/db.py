@@ -31,9 +31,12 @@ CREATE TABLE IF NOT EXISTS sessions (
     github_login TEXT NOT NULL,
     avatar_url TEXT,
     accessible_repos JSONB NOT NULL DEFAULT '[]',
+    repositories JSONB NOT NULL DEFAULT '[]',
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     expires_at TIMESTAMPTZ NOT NULL
 );
+
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS repositories JSONB NOT NULL DEFAULT '[]';
 """
 
 

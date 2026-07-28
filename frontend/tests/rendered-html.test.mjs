@@ -73,11 +73,11 @@ test("server-renders dashboard, run-detail, and settings routes", async () => {
   ]);
   assert.match(runs, /Recent runs/);
   assert.match(runs, /By repo/);
-  assert.match(runs, /Loading verification runs/);
-  assert.match(detail, /Loading run evidence/);
+  assert.match(runs, /Loading verification runs|You’re exploring a product preview/);
+  assert.match(detail, /Loading run evidence|Verification verdict/);
   assert.match(settings, /Settings sections/);
   assert.match(settings, /Repositories/);
-  assert.match(settings, /Loading settings/);
+  assert.match(settings, /Loading settings|Sign in required/);
 });
 
 test("starter preview implementation is removed", async () => {

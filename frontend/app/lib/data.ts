@@ -229,11 +229,20 @@ export async function retryRun(
 }
 
 export const githubLoginUrl = `${liveApiUrl}/auth/github/login`;
+export const githubRepositoryRefreshUrl =
+  `${githubLoginUrl}?redirect_uri=${encodeURIComponent("/settings/integrations")}`;
 
 export interface CurrentUser {
   login: string;
   avatar_url: string | null;
   accessible_repos: string[];
+  repositories?: RepositoryAccess[];
+}
+
+export interface RepositoryAccess {
+  full_name: string;
+  private: boolean | null;
+  visibility: "public" | "private" | "internal" | "unknown" | string;
 }
 
 export async function fetchMe(signal?: AbortSignal): Promise<CurrentUser | null> {

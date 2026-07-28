@@ -14,11 +14,21 @@ logger = logging.getLogger(__name__)
 def _get_run(run_id: int) -> dict:
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT clone_url, base_ref, head_ref, head_sha, installation_id, repo "
+            "SELECT clone_url, base_ref, base_sha, head_ref, head_sha, installation_id, repo, "
+            "pr_number "
             "FROM runs WHERE id = %s",
             (run_id,),
         ).fetchone()
-    keys = ["clone_url", "base_ref", "head_ref", "head_sha", "installation_id", "repo"]
+    keys = [
+        "clone_url",
+        "base_ref",
+        "base_sha",
+        "head_ref",
+        "head_sha",
+        "installation_id",
+        "repo",
+        "pr_number",
+    ]
     return dict(zip(keys, row, strict=True))
 
 
@@ -37,13 +47,28 @@ def _run_comparison(run_id: int) -> None:
     run = _get_run(run_id)
 
     if run["clone_url"] and run["base_ref"] and run["head_ref"]:
-        base_dir = fetch_ref(run["clone_url"], run["base_ref"])
-        head_dir = fetch_ref(run["clone_url"], run["head_ref"])
+        token = None
+        if run["installation_id"]:
+            from app.github_client import get_installation_token
+
+            token = get_installation_token(run["installation_id"])
+
+        base_dir = None
+        head_dir = None
         try:
+            base_dir = fetch_ref(run["clone_url"], run["base_sha"] or run["base_ref"], token)
+            head_fetch_ref = (
+                f"refs/pull/{run['pr_number']}/head"
+                if run["pr_number"]
+                else run["head_sha"] or run["head_ref"]
+            )
+            head_dir = fetch_ref(run["clone_url"], head_fetch_ref, token)
             findings = compare(base_dir, head_dir)
         finally:
-            shutil.rmtree(base_dir, ignore_errors=True)
-            shutil.rmtree(head_dir, ignore_errors=True)
+            if base_dir is not None:
+                shutil.rmtree(base_dir, ignore_errors=True)
+            if head_dir is not None:
+                shutil.rmtree(head_dir, ignore_errors=True)
 
         if run["installation_id"]:
             try:

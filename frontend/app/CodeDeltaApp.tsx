@@ -13,7 +13,9 @@ import {
   Finding,
   FindingKind,
   githubLoginUrl,
+  githubRepositoryRefreshUrl,
   liveApiUrl,
+  RepositoryAccess,
   RunDetail,
   RunStatus,
   RunSummary,
@@ -1557,6 +1559,19 @@ function SettingsPage({ tab }: { tab: "account" | "repositories" }) {
     return () => controller.abort();
   }, []);
 
+  const repositories: RepositoryAccess[] = user
+    ? user.repositories?.length
+      ? user.repositories
+      : user.accessible_repos.map((full_name) => ({
+          full_name,
+          private: null,
+          visibility: "unknown",
+        }))
+    : [];
+  const privateRepositoryCount = repositories.filter(
+    (repository) => repository.private === true,
+  ).length;
+
   return (
     <main className="dashboard-page">
       <AppHeader active="settings" />
@@ -1631,19 +1646,43 @@ function SettingsPage({ tab }: { tab: "account" | "repositories" }) {
             <div className="integration-main">
               <div>
                 <span className="integration-state connected">
-                  <i /> {user.accessible_repos.length} connected
+                  <i /> {repositories.length} connected
                 </span>
                 <h2>CodeΔ GitHub App</h2>
-                <p>The app receives PR events and publishes check-run evidence.</p>
+                <p>
+                  The app receives PR events, checks out selected repositories,
+                  and publishes verification evidence.
+                </p>
               </div>
               <div className="repository-list">
-                {user.accessible_repos.length ? user.accessible_repos.map((repo) => {
-                  const parts = repoParts(repo);
+                {repositories.length ? repositories.map((repository) => {
+                  const parts = repoParts(repository.full_name);
+                  const visibility =
+                    repository.visibility === "internal"
+                      ? "Internal"
+                      : repository.private === true
+                      ? "Private"
+                      : repository.private === false
+                        ? "Public"
+                        : "Visibility unknown";
                   return (
-                    <span key={repo}>
+                    <div className="repository-access-row" key={repository.full_name}>
                       <i>{parts.name.slice(0, 2).toUpperCase()}</i>
-                      {repo}
-                    </span>
+                      <span className="repository-access-name">{repository.full_name}</span>
+                      <span
+                        className={`repository-visibility ${
+                          repository.visibility === "internal"
+                            ? ""
+                            : repository.private === true
+                            ? "repository-private"
+                            : repository.private === false
+                              ? "repository-public"
+                              : ""
+                        }`}
+                      >
+                        {visibility}
+                      </span>
+                    </div>
                   );
                 }) : (
                   <div className="repository-empty">
@@ -1656,13 +1695,45 @@ function SettingsPage({ tab }: { tab: "account" | "repositories" }) {
           </section>
           <section className="install-card">
             <div>
-              <h2>Connect more repositories</h2>
-              <p>Grant CodeΔ access on GitHub. Newly selected repositories appear here when you return.</p>
+              <span className="section-kicker">
+                {privateRepositoryCount
+                  ? `${privateRepositoryCount} private ${
+                      privateRepositoryCount === 1 ? "repository" : "repositories"
+                    } authorized`
+                  : "Repository access"}
+              </span>
+              <h2>Connect public or private repositories</h2>
+              <p>
+                GitHub controls the repository picker. For a private repository,
+                its owner or organization administrator must grant the CodeΔ
+                GitHub App access.
+              </p>
             </div>
-            <a className="button button-primary" href={GITHUB_INSTALL_URL} target="_blank" rel="noreferrer">
-              Install on more repos ↗
-            </a>
+            <div className="repository-access-actions">
+              <a
+                className="button button-primary"
+                href={GITHUB_INSTALL_URL}
+                target="_blank"
+                rel="noreferrer"
+              >
+                Choose repositories on GitHub ↗
+              </a>
+              <a className="button button-quiet" href={githubRepositoryRefreshUrl}>
+                Refresh repository access
+              </a>
+            </div>
           </section>
+          <aside className="repository-security-note">
+            <span aria-hidden="true">⌁</span>
+            <div>
+              <strong>GitHub access stays repository-scoped.</strong>
+              <p>
+                CodeΔ uses a short-lived GitHub App installation token only
+                while checking out a selected revision. Removing a repository
+                from the GitHub installation prevents future access.
+              </p>
+            </div>
+          </aside>
           </div>
         )}
       </div>

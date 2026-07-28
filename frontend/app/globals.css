@@ -5754,6 +5754,103 @@ body {
   }
 }
 
+.repository-access-row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.repository-access-row + .repository-access-row {
+  padding-top: 10px;
+  border-top: 1px solid #1c2838;
+}
+
+.repository-access-name {
+  min-width: 0;
+  overflow: hidden;
+  color: #c6d3e4;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.repository-visibility {
+  padding: 4px 7px;
+  border: 1px solid #2a374a;
+  border-radius: 999px;
+  color: #8190a4;
+  background: #111925;
+  font-family: var(--font-sans);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.repository-visibility.repository-private {
+  color: #d9c2ff;
+  border-color: rgba(176, 133, 255, 0.28);
+  background: rgba(139, 92, 246, 0.1);
+}
+
+.repository-visibility.repository-public {
+  color: #9bdcbc;
+  border-color: rgba(100, 212, 170, 0.24);
+  background: rgba(100, 212, 170, 0.08);
+}
+
+.repository-access-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.repository-security-note {
+  display: flex;
+  gap: 14px;
+  padding: 18px 20px;
+  border: 1px solid #202c3d;
+  border-radius: 12px;
+  color: #8e9db1;
+  background: rgba(10, 16, 26, 0.72);
+}
+
+.repository-security-note > span {
+  color: #9bbcff;
+  font-size: 20px;
+}
+
+.repository-security-note strong {
+  color: #c8d5e5;
+  font-size: 12px;
+}
+
+.repository-security-note p {
+  max-width: 760px;
+  margin: 5px 0 0;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+@media (max-width: 720px) {
+  .install-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .repository-access-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .repository-access-actions .button {
+    width: 100%;
+  }
+}
+
 @media (hover: none), (pointer: coarse) {
   .experience-spotlight {
     display: none;

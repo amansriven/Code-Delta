@@ -2,6 +2,7 @@ import json
 import os
 import secrets
 from datetime import UTC, datetime, timedelta
+from urllib.parse import urljoin, urlparse
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request
@@ -27,6 +28,22 @@ SESSION_COOKIE = "session_id"
 _cookie_kwargs = dict(httponly=True, secure=True, samesite="none", path="/")
 
 
+def _safe_frontend_redirect(value: str | None) -> str:
+    """Resolve a post-auth destination without allowing an external redirect."""
+    fallback = f"{FRONTEND_URL.rstrip('/')}/runs"
+    if not value:
+        return fallback
+
+    if value.startswith("/") and not value.startswith("//"):
+        return urljoin(f"{FRONTEND_URL.rstrip('/')}/", value.lstrip("/"))
+
+    candidate = urlparse(value)
+    frontend = urlparse(FRONTEND_URL)
+    if candidate.scheme in {"http", "https"} and candidate.netloc == frontend.netloc:
+        return value
+    return fallback
+
+
 @router.get("/github/login")
 def github_login(request: Request, redirect_uri: str | None = None):
     state = secrets.token_urlsafe(24)
@@ -37,30 +54,59 @@ def github_login(request: Request, redirect_uri: str | None = None):
     response = RedirectResponse(authorize_url)
     response.set_cookie(STATE_COOKIE, state, max_age=600, **_cookie_kwargs)
     response.set_cookie(
-        REDIRECT_COOKIE, redirect_uri or f"{FRONTEND_URL}/runs", max_age=600, **_cookie_kwargs
+        REDIRECT_COOKIE, _safe_frontend_redirect(redirect_uri), max_age=600, **_cookie_kwargs
     )
     return response
 
 
-def _fetch_accessible_repos(user_token: str) -> list[str]:
+def _github_get(url: str, user_token: str, *, page: int) -> dict:
     headers = {"Authorization": f"Bearer {user_token}", "Accept": "application/vnd.github+json"}
-    installations = (
-        httpx.get("https://api.github.com/user/installations", headers=headers, timeout=10.0)
-        .json()
-        .get("installations", [])
+    response = httpx.get(
+        url,
+        headers=headers,
+        params={"per_page": 100, "page": page},
+        timeout=10.0,
     )
+    response.raise_for_status()
+    return response.json()
 
-    repos: list[str] = []
+
+def _fetch_repository_access(user_token: str) -> list[dict]:
+    """Return every repository this user can access through this GitHub App."""
+    installations: list[dict] = []
+    page = 1
+    while True:
+        payload = _github_get("https://api.github.com/user/installations", user_token, page=page)
+        batch = payload.get("installations", [])
+        installations.extend(batch)
+        if len(batch) < 100:
+            break
+        page += 1
+
+    repositories: dict[str, dict] = {}
     for installation in installations:
         if str(installation.get("app_id")) != str(GITHUB_APP_ID):
             continue
-        resp = httpx.get(
-            f"https://api.github.com/user/installations/{installation['id']}/repositories",
-            headers=headers,
-            timeout=10.0,
-        ).json()
-        repos.extend(r["full_name"] for r in resp.get("repositories", []))
-    return repos
+        page = 1
+        while True:
+            payload = _github_get(
+                f"https://api.github.com/user/installations/{installation['id']}/repositories",
+                user_token,
+                page=page,
+            )
+            batch = payload.get("repositories", [])
+            for repo in batch:
+                full_name = repo["full_name"]
+                repositories[full_name] = {
+                    "full_name": full_name,
+                    "private": bool(repo.get("private")),
+                    "visibility": repo.get("visibility")
+                    or ("private" if repo.get("private") else "public"),
+                }
+            if len(batch) < 100:
+                break
+            page += 1
+    return sorted(repositories.values(), key=lambda repo: repo["full_name"].lower())
 
 
 @router.get("/github/callback")
@@ -89,26 +135,29 @@ def github_callback(request: Request, code: str, state: str):
         timeout=10.0,
     ).json()
 
-    accessible_repos = _fetch_accessible_repos(user_token)
+    repositories = _fetch_repository_access(user_token)
+    accessible_repos = [repo["full_name"] for repo in repositories]
 
     session_id = secrets.token_urlsafe(32)
     expires_at = datetime.now(UTC) + SESSION_TTL
     with get_connection() as conn:
         conn.execute(
             "INSERT INTO sessions "
-            "(id, github_user_id, github_login, avatar_url, accessible_repos, expires_at) "
-            "VALUES (%s, %s, %s, %s, %s, %s)",
+            "(id, github_user_id, github_login, avatar_url, accessible_repos, "
+            "repositories, expires_at) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s)",
             (
                 session_id,
                 user["id"],
                 user["login"],
                 user.get("avatar_url"),
                 json.dumps(accessible_repos),
+                json.dumps(repositories),
                 expires_at,
             ),
         )
 
-    redirect_to = request.cookies.get(REDIRECT_COOKIE, f"{FRONTEND_URL}/runs")
+    redirect_to = _safe_frontend_redirect(request.cookies.get(REDIRECT_COOKIE))
     response = RedirectResponse(redirect_to)
     response.set_cookie(
         SESSION_COOKIE, session_id, max_age=int(SESSION_TTL.total_seconds()), **_cookie_kwargs
@@ -136,6 +185,7 @@ def me(request: Request):
         "login": session["github_login"],
         "avatar_url": session["avatar_url"],
         "accessible_repos": session["accessible_repos"],
+        "repositories": session["repositories"],
     }
 
 
@@ -145,15 +195,20 @@ def get_session(request: Request) -> dict:
         raise HTTPException(status_code=401, detail="not signed in")
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT github_user_id, github_login, avatar_url, accessible_repos FROM sessions "
+            "SELECT github_user_id, github_login, avatar_url, accessible_repos, repositories "
+            "FROM sessions "
             "WHERE id = %s AND expires_at > now()",
             (session_id,),
         ).fetchone()
     if row is None:
         raise HTTPException(status_code=401, detail="session expired or invalid")
+    repositories = row[4] or [
+        {"full_name": repo, "private": None, "visibility": "unknown"} for repo in row[3]
+    ]
     return {
         "github_user_id": row[0],
         "github_login": row[1],
         "avatar_url": row[2],
         "accessible_repos": row[3],
+        "repositories": repositories,
     }
