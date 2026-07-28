@@ -5,6 +5,10 @@ way that could break existing callers, then generate edge-case requests
 targeted at exactly those fields — instead of a hand-written, fixed list.
 """
 
+from app.cases import RequestCase, make_case
+
+HTTP_METHODS = {"delete", "get", "head", "options", "patch", "post", "put", "trace"}
+
 DUMMY_BY_TYPE = {
     "string": "example",
     "integer": 1,
@@ -55,12 +59,7 @@ def resolve_request_schema(spec: dict, path: str, method: str) -> dict | None:
     op = spec.get("paths", {}).get(path, {}).get(method.lower())
     if not op:
         return None
-    schema = (
-        op.get("requestBody", {})
-        .get("content", {})
-        .get("application/json", {})
-        .get("schema")
-    )
+    schema = op.get("requestBody", {}).get("content", {}).get("application/json", {}).get("schema")
     if not schema:
         return None
     return _deref(schema, spec)
@@ -78,16 +77,30 @@ def shared_endpoints(base_spec: dict, pr_spec: dict) -> list[tuple[str, str]]:
     endpoints = []
     for path, base_methods in base_spec.get("paths", {}).items():
         pr_methods = pr_spec.get("paths", {}).get(path, {})
-        for method in base_methods:
-            if method in pr_methods:
+        for method in HTTP_METHODS:
+            if method in base_methods and method in pr_methods:
                 endpoints.append((path, method))
-    return endpoints
+    return sorted(endpoints)
 
 
 def operation_params(spec: dict, path: str, method: str) -> list[dict]:
-    """All declared parameters (path AND query) for an operation."""
-    op = spec.get("paths", {}).get(path, {}).get(method.lower(), {})
-    return op.get("parameters", [])
+    """All path-item and operation parameters, with operation values winning.
+
+    OpenAPI permits parameters at the Path Item level so they can be shared by
+    every method. Treating every Path Item key as an HTTP method used to crash
+    on valid documents containing this form.
+    """
+    path_item = spec.get("paths", {}).get(path, {})
+    op = path_item.get(method.lower(), {})
+
+    def resolved(values: list[dict]) -> list[dict]:
+        return [_deref(value, spec) for value in values]
+
+    inherited = resolved(path_item.get("parameters", []))
+    operation = resolved(op.get("parameters", []))
+    merged = {(param["name"], param["in"]): param for param in inherited}
+    merged.update({(param["name"], param["in"]): param for param in operation})
+    return list(merged.values())
 
 
 def merged_params(base_spec: dict, pr_spec: dict, path: str, method: str) -> list[dict]:
@@ -132,7 +145,7 @@ def _valid_payload(base_schema: dict, pr_schema: dict) -> dict:
     }
 
 
-def _body_cases(path: str, method: str, base_schema: dict, pr_schema: dict) -> list[dict]:
+def _body_cases(path: str, method: str, base_schema: dict, pr_schema: dict) -> list[RequestCase]:
     merged_props = {**base_schema.get("properties", {}), **pr_schema.get("properties", {})}
     cases = []
     for field in diff_fields(base_schema, pr_schema):
@@ -141,19 +154,37 @@ def _body_cases(path: str, method: str, base_schema: dict, pr_schema: dict) -> l
 
         omit_payload = {k: v for k, v in base_payload.items() if k != field}
         cases.append(
-            {"name": f"omit_{field}", "method": method.upper(), "path": path, "json": omit_payload}
+            make_case(
+                name=f"omit_{field}",
+                method=method,
+                path=path,
+                json=omit_payload,
+                rationale=f"Exercise {field} without supplying the field.",
+            )
         )
 
         if field_type in WRONG_TYPE_BY_TYPE:
             payload = {**base_payload, field: WRONG_TYPE_BY_TYPE[field_type]}
             cases.append(
-                {"name": f"wrong_type_{field}", "method": method.upper(), "path": path, "json": payload}
+                make_case(
+                    name=f"wrong_type_{field}",
+                    method=method,
+                    path=path,
+                    json=payload,
+                    rationale=f"Exercise {field} with a value of the wrong JSON type.",
+                )
             )
 
         if field_type in BOUNDARY_BY_TYPE:
             payload = {**base_payload, field: BOUNDARY_BY_TYPE[field_type]}
             cases.append(
-                {"name": f"boundary_{field}", "method": method.upper(), "path": path, "json": payload}
+                make_case(
+                    name=f"boundary_{field}",
+                    method=method,
+                    path=path,
+                    json=payload,
+                    rationale=f"Exercise the type boundary value for {field}.",
+                )
             )
     return cases
 
@@ -165,7 +196,7 @@ def _substitute_path(path_template: str, values: dict) -> str:
     return result
 
 
-def _param_cases(path: str, method: str, params: list[dict]) -> list[dict]:
+def _param_cases(path: str, method: str, params: list[dict]) -> list[RequestCase]:
     """At least one baseline request per endpoint that takes params, plus
     boundary values (zero/negative/empty) per param — this is what actually
     exercises a GET-with-no-body endpoint like `/items/{id}` at all. Query
@@ -173,9 +204,6 @@ def _param_cases(path: str, method: str, params: list[dict]) -> list[dict]:
     left off the URL), since "optional query param became required" is the
     same regression shape as "optional body field became required".
     """
-    if not params:
-        return []
-
     path_params = [p for p in params if p.get("in") == "path"]
     query_params = [p for p in params if p.get("in") == "query"]
 
@@ -185,41 +213,99 @@ def _param_cases(path: str, method: str, params: list[dict]) -> list[dict]:
     baseline_path = {p["name"]: dummy(p) for p in path_params}
     baseline_query = {p["name"]: dummy(p) for p in query_params}
 
-    def make(name: str, path_values: dict, query_values: dict) -> dict:
-        return {
-            "name": name,
-            "method": method.upper(),
-            "path": _substitute_path(path, path_values),
-            "query": query_values,
-            "json": None,
-        }
+    def make(name: str, path_values: dict, query_values: dict, rationale: str) -> RequestCase:
+        return make_case(
+            name=name,
+            method=method,
+            path=_substitute_path(path, path_values),
+            query=query_values,
+            rationale=rationale,
+        )
 
-    cases = [make("param_baseline", baseline_path, baseline_query)]
+    cases = []
 
     for p in path_params:
         param_type = p.get("schema", {}).get("type")
         for boundary_name, boundary_value in PARAM_BOUNDARIES_BY_TYPE.get(param_type, {}).items():
             values = {**baseline_path, p["name"]: boundary_value}
-            cases.append(make(f"path_{p['name']}_{boundary_name}", values, baseline_query))
+            cases.append(
+                make(
+                    f"path_{p['name']}_{boundary_name}",
+                    values,
+                    baseline_query,
+                    f"Exercise path parameter {p['name']} at its {boundary_name} boundary.",
+                )
+            )
 
     for p in query_params:
         param_type = p.get("schema", {}).get("type")
 
         omitted = {k: v for k, v in baseline_query.items() if k != p["name"]}
-        cases.append(make(f"omit_query_{p['name']}", baseline_path, omitted))
+        cases.append(
+            make(
+                f"omit_query_{p['name']}",
+                baseline_path,
+                omitted,
+                f"Exercise the operation without query parameter {p['name']}.",
+            )
+        )
 
         for boundary_name, boundary_value in PARAM_BOUNDARIES_BY_TYPE.get(param_type, {}).items():
             values = {**baseline_query, p["name"]: boundary_value}
-            cases.append(make(f"query_{p['name']}_{boundary_name}", baseline_path, values))
+            cases.append(
+                make(
+                    f"query_{p['name']}_{boundary_name}",
+                    baseline_path,
+                    values,
+                    f"Exercise query parameter {p['name']} at its {boundary_name} boundary.",
+                )
+            )
 
         if param_type in WRONG_TYPE_BY_TYPE:
             values = {**baseline_query, p["name"]: WRONG_TYPE_BY_TYPE[param_type]}
-            cases.append(make(f"wrong_type_query_{p['name']}", baseline_path, values))
+            cases.append(
+                make(
+                    f"wrong_type_query_{p['name']}",
+                    baseline_path,
+                    values,
+                    f"Exercise query parameter {p['name']} with the wrong JSON type.",
+                )
+            )
 
     return cases
 
 
-def generate_cases(base_spec: dict, pr_spec: dict) -> list[dict]:
+def _baseline_case(
+    path: str,
+    method: str,
+    params: list[dict],
+    base_schema: dict | None,
+    pr_schema: dict | None,
+) -> RequestCase:
+    path_params = [param for param in params if param.get("in") == "path"]
+    query_params = [param for param in params if param.get("in") == "query"]
+
+    def dummy(param: dict):
+        return DUMMY_BY_TYPE.get(param.get("schema", {}).get("type"), "example")
+
+    path_values = {param["name"]: dummy(param) for param in path_params}
+    query_values = {param["name"]: dummy(param) for param in query_params}
+    body = (
+        _valid_payload(base_schema or {}, pr_schema or {})
+        if base_schema is not None or pr_schema is not None
+        else None
+    )
+    return make_case(
+        name="operation_baseline",
+        method=method,
+        path=_substitute_path(path, path_values),
+        query=query_values,
+        json=body,
+        rationale="Exercise the shared operation with a representative valid request.",
+    )
+
+
+def generate_cases(base_spec: dict, pr_spec: dict) -> list[RequestCase]:
     """Generate edge-case requests for every endpoint shared by both specs:
     body-field cases for fields the diff flags as changed, plus path/query
     param baseline/boundary/omit cases so endpoints with no body (most GETs)
@@ -229,8 +315,10 @@ def generate_cases(base_spec: dict, pr_spec: dict) -> list[dict]:
     for path, method in shared_endpoints(base_spec, pr_spec):
         base_schema = resolve_request_schema(base_spec, path, method)
         pr_schema = resolve_request_schema(pr_spec, path, method)
+        params = merged_params(base_spec, pr_spec, path, method)
+        cases.append(_baseline_case(path, method, params, base_schema, pr_schema))
         if base_schema != pr_schema:
             cases.extend(_body_cases(path, method, base_schema or {}, pr_schema or {}))
 
-        cases.extend(_param_cases(path, method, merged_params(base_spec, pr_spec, path, method)))
+        cases.extend(_param_cases(path, method, params))
     return cases

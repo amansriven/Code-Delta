@@ -14,11 +14,12 @@ logger = logging.getLogger(__name__)
 def _get_run(run_id: int) -> dict:
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT clone_url, base_ref, head_ref, head_sha, installation_id, repo FROM runs WHERE id = %s",
+            "SELECT clone_url, base_ref, head_ref, head_sha, installation_id, repo "
+            "FROM runs WHERE id = %s",
             (run_id,),
         ).fetchone()
     keys = ["clone_url", "base_ref", "head_ref", "head_sha", "installation_id", "repo"]
-    return dict(zip(keys, row))
+    return dict(zip(keys, row, strict=True))
 
 
 def _set_status(
@@ -26,7 +27,8 @@ def _set_status(
 ) -> None:
     with get_connection() as conn:
         conn.execute(
-            "UPDATE runs SET status = %s, result = %s, error = %s, updated_at = now() WHERE id = %s",
+            "UPDATE runs SET status = %s, result = %s, error = %s, "
+            "updated_at = now() WHERE id = %s",
             (status, json.dumps(result) if result is not None else None, error, run_id),
         )
 

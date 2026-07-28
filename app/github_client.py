@@ -37,15 +37,25 @@ def get_installation_token(installation_id: int) -> str:
 
 def _format_summary(findings: list[dict]) -> str:
     if not findings:
-        return "No regressions reproduced. All generated edge-case requests behaved the same on both branches."
+        return (
+            "No regressions reproduced. All generated edge-case requests "
+            "behaved the same on both branches."
+        )
 
-    lines = [f"Reproduced {len(findings)} finding(s) by running generated edge-case requests against base and PR branches:\n"]
+    lines = [
+        f"Reproduced {len(findings)} finding(s) by running generated edge-case "
+        "requests against base and PR branches:\n"
+    ]
     for f in findings:
         req = f["request"]
         lines.append(f"### `{f['kind']}` — {req['method']} {req['path']} ({f['case']})")
         lines.append(f"- Request body: `{req.get('json')}`")
-        lines.append(f"- Base response: `{f['base_response']['status_code']}` — {f['base_response']['body']}")
-        lines.append(f"- PR response: `{f['pr_response']['status_code']}` — {f['pr_response']['body']}")
+        lines.append(
+            f"- Base response: `{f['base_response']['status_code']}` — {f['base_response']['body']}"
+        )
+        lines.append(
+            f"- PR response: `{f['pr_response']['status_code']}` — {f['pr_response']['body']}"
+        )
         lines.append("")
     return "\n".join(lines)
 

@@ -46,7 +46,10 @@ async def github_webhook(
     with get_connection() as conn:
         row = conn.execute(
             """
-            INSERT INTO runs (repo, pr_number, clone_url, base_ref, base_sha, head_ref, head_sha, installation_id)
+            INSERT INTO runs (
+                repo, pr_number, clone_url, base_ref, base_sha,
+                head_ref, head_sha, installation_id
+            )
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
             """,

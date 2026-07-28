@@ -65,10 +65,20 @@ def get_run(run_id: int, session: dict = Depends(get_session)):
     if row is None or row[1] not in session["accessible_repos"]:
         raise HTTPException(status_code=404, detail="run not found")
     keys = [
-        "id", "repo", "pr_number", "status", "result", "error",
-        "base_ref", "base_sha", "head_ref", "head_sha", "created_at", "updated_at",
+        "id",
+        "repo",
+        "pr_number",
+        "status",
+        "result",
+        "error",
+        "base_ref",
+        "base_sha",
+        "head_ref",
+        "head_sha",
+        "created_at",
+        "updated_at",
     ]
-    return dict(zip(keys, row))
+    return dict(zip(keys, row, strict=True))
 
 
 @app.get("/runs")
@@ -95,10 +105,15 @@ def list_runs(session: dict = Depends(get_session)):
             (session["accessible_repos"],),
         ).fetchall()
     keys = [
-        "id", "repo", "pr_number", "status", "created_at",
-        "finding_count", "highest_severity",
+        "id",
+        "repo",
+        "pr_number",
+        "status",
+        "created_at",
+        "finding_count",
+        "highest_severity",
     ]
-    return [dict(zip(keys, r)) for r in rows]
+    return [dict(zip(keys, r, strict=True)) for r in rows]
 
 
 @app.post("/runs/{run_id}/retry")

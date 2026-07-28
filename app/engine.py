@@ -5,6 +5,7 @@ from pathlib import Path
 
 import httpx
 
+from app.cases import RequestCase
 from app.llm import explain_findings, suggest_extra_cases
 from app.openapi_diff import generate_cases
 
@@ -48,7 +49,7 @@ class RunningApp:
             self.process.kill()
 
 
-def _run_case(base_url: str, case: dict) -> dict:
+def _run_case(base_url: str, case: RequestCase) -> dict:
     with httpx.Client() as client:
         resp = client.request(
             case["method"],
@@ -92,21 +93,18 @@ def compare(base_dir: Path, pr_dir: Path, diff: str | None = None) -> list[dict]
         for case in cases:
             base_result = _run_case(base_app.base_url, case)
             pr_result = _run_case(pr_app.base_url, case)
-            base_ok = 200 <= base_result["status_code"] < 300
-            pr_ok = 200 <= pr_result["status_code"] < 300
 
-            if base_ok and not pr_ok:
-                kind = "regression"
-            elif base_result["status_code"] != pr_result["status_code"]:
-                kind = "status_code_changed"
-            else:
+            kind = classify_response_change(base_result, pr_result)
+            if kind is None:
                 continue
 
             findings.append(
                 {
                     "kind": kind,
+                    "case_id": case["id"],
                     "case": case["name"],
                     "source": case.get("source", "rules"),
+                    "rationale": case.get("rationale"),
                     "request": {
                         "method": case["method"],
                         "path": case["path"],
@@ -119,15 +117,26 @@ def compare(base_dir: Path, pr_dir: Path, diff: str | None = None) -> list[dict]
 
         # Explanations are commentary on evidence that already stands alone —
         # attached under a separate key so the UI can't blur the two.
-        for case_name, explanation in explain_findings(findings, diff).items():
+        for case_identifier, explanation in explain_findings(findings, diff).items():
             for finding in findings:
-                if finding["case"] == case_name:
+                if finding["case_id"] == case_identifier or finding["case"] == case_identifier:
                     finding["explanation"] = explanation
 
         return findings
     finally:
         base_app.stop()
         pr_app.stop()
+
+
+def classify_response_change(base_result: dict, pr_result: dict) -> str | None:
+    """Classify the status-code behavior observed for one executed request."""
+    base_ok = 200 <= base_result["status_code"] < 300
+    pr_ok = 200 <= pr_result["status_code"] < 300
+    if base_ok and not pr_ok:
+        return "regression"
+    if base_result["status_code"] != pr_result["status_code"]:
+        return "status_code_changed"
+    return None
 
 
 if __name__ == "__main__":

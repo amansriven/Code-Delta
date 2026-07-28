@@ -1,7 +1,7 @@
 import json
 import os
 import secrets
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 import httpx
 from fastapi import APIRouter, HTTPException, Request
@@ -15,7 +15,9 @@ GITHUB_APP_ID = os.environ.get("GITHUB_APP_ID")
 CLIENT_ID = os.environ.get("GITHUB_OAUTH_CLIENT_ID")
 CLIENT_SECRET = os.environ.get("GITHUB_OAUTH_CLIENT_SECRET")
 CALLBACK_URL = os.environ.get("GITHUB_OAUTH_CALLBACK_URL")
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "https://codedelta-frontend.amansriven757.workers.dev")
+FRONTEND_URL = os.environ.get(
+    "FRONTEND_URL", "https://codedelta-frontend.amansriven757.workers.dev"
+)
 
 SESSION_TTL = timedelta(days=7)
 STATE_COOKIE = "oauth_state"
@@ -42,9 +44,11 @@ def github_login(request: Request, redirect_uri: str | None = None):
 
 def _fetch_accessible_repos(user_token: str) -> list[str]:
     headers = {"Authorization": f"Bearer {user_token}", "Accept": "application/vnd.github+json"}
-    installations = httpx.get(
-        "https://api.github.com/user/installations", headers=headers, timeout=10.0
-    ).json().get("installations", [])
+    installations = (
+        httpx.get("https://api.github.com/user/installations", headers=headers, timeout=10.0)
+        .json()
+        .get("installations", [])
+    )
 
     repos: list[str] = []
     for installation in installations:
@@ -88,17 +92,27 @@ def github_callback(request: Request, code: str, state: str):
     accessible_repos = _fetch_accessible_repos(user_token)
 
     session_id = secrets.token_urlsafe(32)
-    expires_at = datetime.now(timezone.utc) + SESSION_TTL
+    expires_at = datetime.now(UTC) + SESSION_TTL
     with get_connection() as conn:
         conn.execute(
-            "INSERT INTO sessions (id, github_user_id, github_login, avatar_url, accessible_repos, expires_at) "
+            "INSERT INTO sessions "
+            "(id, github_user_id, github_login, avatar_url, accessible_repos, expires_at) "
             "VALUES (%s, %s, %s, %s, %s, %s)",
-            (session_id, user["id"], user["login"], user.get("avatar_url"), json.dumps(accessible_repos), expires_at),
+            (
+                session_id,
+                user["id"],
+                user["login"],
+                user.get("avatar_url"),
+                json.dumps(accessible_repos),
+                expires_at,
+            ),
         )
 
     redirect_to = request.cookies.get(REDIRECT_COOKIE, f"{FRONTEND_URL}/runs")
     response = RedirectResponse(redirect_to)
-    response.set_cookie(SESSION_COOKIE, session_id, max_age=int(SESSION_TTL.total_seconds()), **_cookie_kwargs)
+    response.set_cookie(
+        SESSION_COOKIE, session_id, max_age=int(SESSION_TTL.total_seconds()), **_cookie_kwargs
+    )
     response.delete_cookie(STATE_COOKIE, path="/")
     response.delete_cookie(REDIRECT_COOKIE, path="/")
     return response

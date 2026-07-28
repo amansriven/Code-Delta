@@ -22,6 +22,8 @@ import os
 
 import httpx
 
+from app.cases import make_case
+
 logger = logging.getLogger(__name__)
 
 OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
@@ -98,8 +100,16 @@ def suggest_extra_cases(
     for case in result.get("cases", [])[:limit]:
         if not all(k in case for k in ("name", "method", "path", "json")):
             continue  # local model dropped a field — skip rather than guess
-        case["source"] = "llm"
-        cases.append(case)
+        cases.append(
+            make_case(
+                name=case["name"],
+                method=case["method"],
+                path=case["path"],
+                json=case["json"],
+                rationale=case.get("rationale", "LLM-suggested semantic edge case."),
+                source="llm",
+            )
+        )
     return cases
 
 
@@ -133,8 +143,9 @@ def explain_findings(findings: list[dict], diff: str | None = None) -> dict[str,
         "request today.\n"
         "- likely_cause: the change most likely responsible. If you're "
         "inferring without a diff, say so rather than guessing confidently.\n\n"
-        "Respond with ONLY a JSON object of this exact shape, no other text:\n"
-        '{"summaries": [{"case": "...", "impact": "...", "likely_cause": "..."}]}'
+        "Identify each finding by its case_id. Respond with ONLY a JSON object "
+        "of this exact shape, no other text:\n"
+        '{"summaries": [{"case_id": "...", "impact": "...", "likely_cause": "..."}]}'
     )
 
     result = _generate_json(prompt)
@@ -143,6 +154,10 @@ def explain_findings(findings: list[dict], diff: str | None = None) -> dict[str,
 
     summaries = {}
     for s in result.get("summaries", []):
-        if all(k in s for k in ("case", "impact", "likely_cause")):
-            summaries[s["case"]] = {"impact": s["impact"], "likely_cause": s["likely_cause"]}
+        identifier = s.get("case_id") or s.get("case")
+        if identifier and all(k in s for k in ("impact", "likely_cause")):
+            summaries[identifier] = {
+                "impact": s["impact"],
+                "likely_cause": s["likely_cause"],
+            }
     return summaries
