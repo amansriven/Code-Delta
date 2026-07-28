@@ -21,6 +21,8 @@ jobs:
 
   frontend:
     runs-on: ubuntu-latest
+    env:
+      NEXT_PUBLIC_CODEDELTA_API_URL: https://web-production-e59907.up.railway.app
     defaults:
       run:
         working-directory: frontend
