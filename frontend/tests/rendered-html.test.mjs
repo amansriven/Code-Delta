@@ -30,12 +30,30 @@ test("server-renders the Code Delta landing page", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>CodeΔ — Evidence, not speculation<\/title>/i);
-  assert.match(html, /Your API changed/);
-  assert.match(html, /Know exactly how/);
-  assert.match(html, /Evidence from real requests/);
+  assert.match(html, /<title>CodeΔ — Ship API changes without the guesswork<\/title>/i);
+  assert.match(html, /Ship API changes/);
+  assert.match(html, /without the guesswork/);
+  assert.match(html, /Everything you need to review API behavior/);
   assert.doesNotMatch(html, /codex-preview/);
   assert.doesNotMatch(html, /react-loading-skeleton/);
+});
+
+test("server-renders the expanded public product site", async () => {
+  const responses = await Promise.all([
+    render("/product"),
+    render("/how-it-works"),
+    render("/docs"),
+    render("/security"),
+  ]);
+  responses.forEach((response) => assert.equal(response.status, 200));
+
+  const [product, workflow, docs, security] = await Promise.all(
+    responses.map((response) => response.text()),
+  );
+  assert.match(product, /API regression testing your whole team can trust/);
+  assert.match(workflow, /A rigorous test loop/);
+  assert.match(docs, /Local quickstart/);
+  assert.match(security, /Least-privilege repository access/);
 });
 
 test("server-renders dashboard, run-detail, and settings routes", async () => {

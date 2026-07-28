@@ -47,14 +47,58 @@ function PublicHeader() {
     <header className="public-header">
       <Wordmark />
       <nav aria-label="Public navigation">
-        <a className="nav-link" href="#how-it-works">
-          How it works
+        <a className="nav-link" href="/product">
+          Product
         </a>
-        <a className="button button-quiet button-small" href={githubLoginUrl}>
+        <a className="nav-link" href="/how-it-works">
+          Workflow
+        </a>
+        <a className="nav-link" href="/docs">
+          Docs
+        </a>
+        <a className="nav-link" href="/security">
+          Security
+        </a>
+        <a className="nav-signin" href={githubLoginUrl}>
           Sign in
+        </a>
+        <a className="button button-primary button-small" href={githubLoginUrl}>
+          Get started <span aria-hidden="true">↗</span>
         </a>
       </nav>
     </header>
+  );
+}
+
+function PublicFooter() {
+  return (
+    <footer className="public-footer public-footer-expanded">
+      <div className="footer-brand">
+        <Wordmark compact />
+        <p>Evidence-first API verification for every pull request.</p>
+        <span>Built for teams that ship APIs with confidence.</span>
+      </div>
+      <div className="footer-links">
+        <div>
+          <strong>Product</strong>
+          <a href="/product">Overview</a>
+          <a href="/how-it-works">How it works</a>
+          <a href="/security">Security</a>
+        </div>
+        <div>
+          <strong>Resources</strong>
+          <a href="/docs">Documentation</a>
+          <a href="/runs">Live dashboard</a>
+          <a href="https://github.com/amansriven/Code-Delta" target="_blank" rel="noreferrer">
+            GitHub ↗
+          </a>
+        </div>
+      </div>
+      <div className="footer-bottom">
+        <span>© 2026 Code Delta</span>
+        <span className="system-status"><i /> All systems operational</span>
+      </div>
+    </footer>
   );
 }
 
@@ -229,64 +273,331 @@ function EvidencePreview() {
 function LandingPage() {
   return (
     <main className="public-page">
+      <div className="landing-shell">
+        <div className="aurora aurora-a" aria-hidden="true" />
+        <div className="aurora aurora-b" aria-hidden="true" />
+        <div className="mesh-grid" aria-hidden="true" />
+        <PublicHeader />
+        <section className="hero">
+          <div className="hero-copy">
+            <div className="eyebrow">
+              <span />
+              GitHub-native API verification
+              <b>New</b>
+            </div>
+            <h1>
+              Ship API changes
+              <br />
+              <em>without the guesswork.</em>
+            </h1>
+            <p>
+              CodeΔ turns every pull request into a real behavioral comparison.
+              We generate targeted requests, run both branches, and surface only
+              the API changes your team needs to review.
+            </p>
+            <div className="hero-actions">
+              <a className="button button-primary button-large" href={githubLoginUrl}>
+                Start verifying with GitHub <span aria-hidden="true">→</span>
+              </a>
+              <a className="button button-quiet button-large" href="/runs">
+                View live dashboard
+              </a>
+            </div>
+            <div className="hero-proof">
+              <span><i>✓</i> Reproducible evidence</span>
+              <span><i>✓</i> OpenAPI aware</span>
+              <span><i>✓</i> Setup in minutes</span>
+            </div>
+          </div>
+          <div className="hero-visual">
+            <div className="floating-chip chip-one"><i /> OpenAPI diff detected</div>
+            <div className="floating-chip chip-two">✓ Check run published</div>
+            <EvidencePreview />
+            <div className="visual-glow" aria-hidden="true" />
+          </div>
+        </section>
+        <div className="trusted-strip">
+          <span>Designed for modern API teams</span>
+          <div>
+            <b>FASTAPI</b>
+            <b>OPENAPI</b>
+            <b>GITHUB</b>
+            <b>POSTGRESQL</b>
+            <b>PYTHON</b>
+          </div>
+        </div>
+      </div>
+
+      <section className="story-section">
+        <div className="section-heading centered-heading">
+          <span className="section-kicker">From diff to decision</span>
+          <h2>Everything you need to review API behavior.</h2>
+          <p>One focused workflow replaces manual reproduction, speculative comments, and scattered logs.</p>
+        </div>
+        <div className="workflow-rail">
+          <article>
+            <span className="workflow-icon">⌁</span>
+            <small>01 · Detect</small>
+            <h3>Understand the changed surface</h3>
+            <p>CodeΔ reads both OpenAPI specifications and isolates endpoints, parameters, and fields touched by the PR.</p>
+          </article>
+          <span className="rail-arrow">→</span>
+          <article>
+            <span className="workflow-icon">⚡</span>
+            <small>02 · Exercise</small>
+            <h3>Run targeted edge cases</h3>
+            <p>Deterministic and AI-assisted cases execute against both branches with identical requests.</p>
+          </article>
+          <span className="rail-arrow">→</span>
+          <article>
+            <span className="workflow-icon">Δ</span>
+            <small>03 · Compare</small>
+            <h3>Review concrete evidence</h3>
+            <p>Only reproduced differences appear in your GitHub Check and dashboard, with both responses attached.</p>
+          </article>
+        </div>
+      </section>
+
+      <section className="bento-section">
+        <div className="section-heading">
+          <span className="section-kicker">Built for signal</span>
+          <h2>A calmer way to ship fast.</h2>
+        </div>
+        <div className="bento-grid">
+          <article className="bento-card bento-wide bento-blue">
+            <div>
+              <span className="card-label">Behavioral diff</span>
+              <h3>See what users experience—not just what code changed.</h3>
+              <p>Compare status codes and response bodies from real executions on each side of the pull request.</p>
+            </div>
+            <div className="mini-diff" aria-hidden="true">
+              <span><b>main</b><code>201 Created</code></span>
+              <i>→</i>
+              <span className="mini-diff-danger"><b>pull request</b><code>422 Required</code></span>
+            </div>
+          </article>
+          <article className="bento-card">
+            <span className="card-icon">◎</span>
+            <span className="card-label">Repository aware</span>
+            <h3>One workspace, every connected repo.</h3>
+            <p>Installation-scoped access keeps teams focused on exactly the repositories they manage.</p>
+          </article>
+          <article className="bento-card">
+            <span className="card-icon">↻</span>
+            <span className="card-label">Reliable operations</span>
+            <h3>Async runs with safe retries.</h3>
+            <p>PostgreSQL-backed jobs capture progress, errors, history, and retry state without blocking webhooks.</p>
+          </article>
+          <article className="bento-card bento-wide ai-card">
+            <div>
+              <span className="card-label">AI-ready, evidence-first</span>
+              <h3>Intelligence that extends tests—never invents verdicts.</h3>
+              <p>LLMs can propose semantic edge cases and explain impact, while the regression decision always comes from reproduced requests.</p>
+            </div>
+            <div className="ai-orbit" aria-hidden="true">
+              <span>API</span><i /><i /><i />
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section className="final-cta">
+        <div className="cta-orb" aria-hidden="true" />
+        <span className="section-kicker">Start with your next pull request</span>
+        <h2>Make every API change explain itself.</h2>
+        <p>Connect GitHub, select a repository, and let CodeΔ turn hidden behavior changes into reviewable evidence.</p>
+        <div>
+          <a className="button button-primary button-large" href={githubLoginUrl}>Connect GitHub <span>→</span></a>
+          <a className="button button-quiet button-large" href="/docs">Read the docs</a>
+        </div>
+      </section>
+      <PublicFooter />
+    </main>
+  );
+}
+
+function PublicPageHero({
+  kicker,
+  title,
+  description,
+  children,
+}: {
+  kicker: string;
+  title: string;
+  description: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <section className="subpage-hero">
+      <span className="section-kicker">{kicker}</span>
+      <h1>{title}</h1>
+      <p>{description}</p>
+      {children}
+    </section>
+  );
+}
+
+function ProductPage() {
+  return (
+    <main className="public-page light-public-page">
       <PublicHeader />
-      <section className="hero">
-        <div className="hero-copy">
-          <div className="eyebrow">
-            <span />
-            Behavioral regression detection
-          </div>
-          <h1>
-            Your API changed.
-            <br />
-            <em>Know exactly how.</em>
-          </h1>
-          <p>
-            CodeΔ runs the same edge-case requests against your base branch and
-            pull request—then reports only the behavior that actually changed.
-          </p>
-          <div className="hero-actions">
-            <a className="button button-primary" href={githubLoginUrl}>
-              Continue with GitHub <span aria-hidden="true">→</span>
-            </a>
-            <a className="button button-quiet" href="/runs">
-              Explore the demo
-            </a>
-          </div>
-          <div className="hero-proof">
-            <span className="proof-mark" aria-hidden="true">
-              ✓
-            </span>
-            Evidence from real requests. No LLM verdicts.
-          </div>
+      <PublicPageHero
+        kicker="The verification platform"
+        title="API regression testing your whole team can trust."
+        description="CodeΔ connects contract changes to runtime evidence, giving reviewers a fast, shared understanding of what a pull request changes for real clients."
+      >
+        <div className="subpage-actions">
+          <a className="button button-primary button-large" href={githubLoginUrl}>Connect a repository →</a>
+          <a className="button button-quiet button-large" href="/how-it-works">Explore the workflow</a>
         </div>
-        <div className="hero-visual">
-          <div className="ambient ambient-one" />
-          <div className="ambient ambient-two" />
-          <EvidencePreview />
+      </PublicPageHero>
+      <section className="product-showcase">
+        <div className="showcase-copy">
+          <span className="section-kicker">A complete feedback loop</span>
+          <h2>From pull request to proof, automatically.</h2>
+          <p>Every run preserves the context a reviewer needs: repository, branch, commit, generated request, both responses, severity, and operational state.</p>
+          <ul className="check-list">
+            <li><i>✓</i> OpenAPI-aware case generation</li>
+            <li><i>✓</i> Real base-versus-head execution</li>
+            <li><i>✓</i> GitHub Check Run reporting</li>
+            <li><i>✓</i> Searchable, repository-grouped history</li>
+          </ul>
+        </div>
+        <EvidencePreview />
+      </section>
+      <section className="feature-matrix">
+        {[
+          ["⌁", "Changed-surface detection", "Targets only endpoints and inputs affected by the pull request."],
+          ["◫", "Request provenance", "Stable case IDs and rationales make every generated request traceable."],
+          ["Δ", "Behavior classification", "Separates true regressions from other status-code changes."],
+          ["↻", "Failure recovery", "Clear errors and one-click retries keep transient failures actionable."],
+          ["◎", "Repository visibility", "See every repository granted to the CodeΔ GitHub App."],
+          ["✦", "AI enrichment", "Optional semantic cases and explanations layer onto deterministic evidence."],
+        ].map(([icon, title, copy]) => (
+          <article key={title}>
+            <span>{icon}</span><h3>{title}</h3><p>{copy}</p>
+          </article>
+        ))}
+      </section>
+      <PublicFooter />
+    </main>
+  );
+}
+
+function WorkflowPage() {
+  return (
+    <main className="public-page light-public-page">
+      <PublicHeader />
+      <PublicPageHero
+        kicker="How Code Delta works"
+        title="A rigorous test loop, triggered by a pull request."
+        description="CodeΔ combines contract analysis, isolated execution, and evidence-first reporting in one repeatable workflow."
+      />
+      <section className="timeline-section">
+        {[
+          ["01", "A pull request changes your API", "The GitHub App receives the event and creates an asynchronous verification run.", "pull_request.opened"],
+          ["02", "CodeΔ maps the changed surface", "Base and head OpenAPI specifications are compared to identify testable request changes.", "openapi.diff()"],
+          ["03", "Focused cases are generated", "Rules cover contract boundaries; optional AI adds semantic cases based on field meaning.", "cases.generate()"],
+          ["04", "Both branches are exercised", "The same request runs against isolated base and pull-request applications.", "base ⇄ head"],
+          ["05", "Only differences survive", "Equivalent behavior and pre-existing failures are suppressed to keep the result focused.", "compare.responses()"],
+          ["06", "Evidence reaches the review", "Findings are stored, published as a GitHub Check, and available in the dashboard.", "check_run.complete"],
+        ].map(([number, title, copy, code]) => (
+          <article key={number}>
+            <span className="timeline-number">{number}</span>
+            <div><h2>{title}</h2><p>{copy}</p></div>
+            <code>{code}</code>
+          </article>
+        ))}
+      </section>
+      <section className="principle-callout">
+        <span>Our core principle</span>
+        <blockquote>“AI can suggest what to test. Only execution can prove what changed.”</blockquote>
+        <p>This boundary keeps CodeΔ useful in serious engineering workflows: generated ideas remain clearly separate from reproduced evidence.</p>
+      </section>
+      <PublicFooter />
+    </main>
+  );
+}
+
+function DocsPage() {
+  return (
+    <main className="public-page light-public-page">
+      <PublicHeader />
+      <div className="docs-layout">
+        <aside className="docs-sidebar">
+          <span>Documentation</span>
+          <a className="active" href="#quickstart">Quickstart</a>
+          <a href="#architecture">Architecture</a>
+          <a href="#local-development">Local development</a>
+          <a href="#api">API reference</a>
+          <a href="#ai">AI assistance</a>
+        </aside>
+        <article className="docs-content">
+          <span className="section-kicker">Code Delta docs</span>
+          <h1 id="quickstart">Start verifying API behavior.</h1>
+          <p className="docs-lede">Get the complete CodeΔ stack running locally, or connect the hosted dashboard to a GitHub App installation.</p>
+          <div className="docs-note"><b>Prerequisites</b><span>Python 3.12+, Node.js 22.13+, Docker, Git, and Make.</span></div>
+          <h2>Local quickstart</h2>
+          <p>Install dependencies and start PostgreSQL:</p>
+          <pre><code>{`make setup\nmake db-up\nmake db-schema`}</code></pre>
+          <p>Then run the API, worker, and frontend in separate terminals:</p>
+          <pre><code>{`make api\nmake worker\nmake frontend-dev LIVE_API_URL=http://localhost:8000`}</code></pre>
+          <h2 id="architecture">Architecture</h2>
+          <div className="architecture-row">
+            <span>GitHub App</span><i>→</i><span>FastAPI</span><i>→</i><span>PostgreSQL queue</span><i>→</i><span>Worker</span><i>→</i><span>Check Run</span>
+          </div>
+          <h2 id="local-development">Local URLs</h2>
+          <table className="docs-table"><tbody>
+            <tr><th>Dashboard</th><td><code>http://localhost:3000</code></td></tr>
+            <tr><th>Backend API</th><td><code>http://localhost:8000</code></td></tr>
+            <tr><th>Interactive API docs</th><td><code>http://localhost:8000/docs</code></td></tr>
+            <tr><th>Health endpoint</th><td><code>http://localhost:8000/health</code></td></tr>
+          </tbody></table>
+          <h2 id="api">Core API</h2>
+          <div className="endpoint-list">
+            <span><b>GET</b><code>/auth/me</code><small>Current GitHub identity and repositories</small></span>
+            <span><b>GET</b><code>/runs</code><small>Recent authorized verification runs</small></span>
+            <span><b>GET</b><code>/runs/&#123;id&#125;</code><small>Complete run evidence and branch context</small></span>
+            <span><b>POST</b><code>/runs/&#123;id&#125;/retry</code><small>Requeue a verification run</small></span>
+          </div>
+          <h2 id="ai">AI assistance</h2>
+          <p>Set <code>OLLAMA_URL</code> and <code>OLLAMA_MODEL</code> to enable semantic case suggestions and evidence-grounded explanations. CodeΔ continues deterministically when the model is unavailable.</p>
+        </article>
+      </div>
+      <PublicFooter />
+    </main>
+  );
+}
+
+function SecurityPage() {
+  return (
+    <main className="public-page light-public-page">
+      <PublicHeader />
+      <PublicPageHero
+        kicker="Security by design"
+        title="Repository access stays explicit. Evidence stays scoped."
+        description="CodeΔ uses separate GitHub App and OAuth responsibilities so repository automation and dashboard identity never blur together."
+      />
+      <section className="security-grid">
+        <article className="security-primary">
+          <span className="card-icon">◈</span>
+          <h2>Least-privilege repository access</h2>
+          <p>CodeΔ can only receive events and read code for repositories explicitly selected during GitHub App installation.</p>
+        </article>
+        <article><span>01</span><h3>Signed webhooks</h3><p>Every incoming GitHub event is verified before processing.</p></article>
+        <article><span>02</span><h3>Server-side sessions</h3><p>Dashboard access uses secure, HTTP-only session cookies.</p></article>
+        <article><span>03</span><h3>Scoped run queries</h3><p>Run history and retries are filtered by the signed-in user’s accessible repositories.</p></article>
+        <article><span>04</span><h3>Isolated execution</h3><p>Base and head applications run in separate subprocesses during comparison.</p></article>
+      </section>
+      <section className="security-boundary">
+        <div><span className="section-kicker">Clear trust boundaries</span><h2>Automation and identity remain separate.</h2></div>
+        <div className="boundary-cards">
+          <article><b>GitHub App</b><p>Repository events, installation tokens, code access, and Check Run publishing.</p></article>
+          <span>≠</span>
+          <article><b>GitHub OAuth</b><p>User sign-in, server-side sessions, and repository-scoped dashboard authorization.</p></article>
         </div>
       </section>
-      <section className="principles" id="how-it-works">
-        <article>
-          <span className="principle-number">01</span>
-          <h2>Detect what changed</h2>
-          <p>CodeΔ reads the OpenAPI diff and targets the endpoints touched by the PR.</p>
-        </article>
-        <article>
-          <span className="principle-number">02</span>
-          <h2>Run both versions</h2>
-          <p>The exact same generated requests run against the base and head branches.</p>
-        </article>
-        <article>
-          <span className="principle-number">03</span>
-          <h2>Show the evidence</h2>
-          <p>Only reproduced behavior changes reach the dashboard and GitHub check.</p>
-        </article>
-      </section>
-      <footer className="public-footer">
-        <Wordmark compact />
-        <p>Evidence, not speculation.</p>
-      </footer>
+      <PublicFooter />
     </main>
   );
 }
@@ -1230,6 +1541,10 @@ function SettingsPage({ tab }: { tab: "account" | "repositories" }) {
 export default function CodeDeltaApp({ route }: { route: string[] }) {
   const path = route.join("/");
   if (!path) return <LandingPage />;
+  if (path === "product") return <ProductPage />;
+  if (path === "how-it-works") return <WorkflowPage />;
+  if (path === "docs") return <DocsPage />;
+  if (path === "security") return <SecurityPage />;
   if (path === "login") return <LoginPage />;
   if (path === "onboarding") return <OnboardingPage />;
   if (path === "runs") return <RunsPage />;

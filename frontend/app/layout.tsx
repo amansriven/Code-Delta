@@ -11,11 +11,11 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     metadataBase: new URL(origin),
     title: {
-      default: "CodeΔ — Evidence, not speculation",
+      default: "CodeΔ — Ship API changes without the guesswork",
       template: "%s · CodeΔ",
     },
     description:
-      "Reproduce API behavior changes across pull requests and review the exact request and response evidence.",
+      "Evidence-first API verification that shows exactly how pull requests change real behavior.",
     applicationName: "Code Delta",
     keywords: [
       "API regression testing",
@@ -25,24 +25,24 @@ export async function generateMetadata(): Promise<Metadata> {
     ],
     openGraph: {
       type: "website",
-      title: "CodeΔ — Your API changed. Know exactly how.",
+      title: "CodeΔ — Ship API changes without the guesswork.",
       description:
-        "Concrete API behavior from real requests across your base branch and pull request.",
+        "Run targeted requests against both branches and review only the behavior that actually changed.",
       images: [
         {
-          url: `${origin}/og.png`,
+          url: `${origin}/og-v2.png`,
           width: 1731,
           height: 909,
-          alt: "Code Delta — Your API changed. Know exactly how.",
+          alt: "Code Delta — Ship API changes without the guesswork.",
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: "CodeΔ — Evidence, not speculation",
+      title: "CodeΔ — Ship API changes without the guesswork.",
       description:
-        "Concrete API behavior from real requests across your base branch and pull request.",
-      images: [`${origin}/og.png`],
+        "Evidence-first API verification for modern development teams.",
+      images: [`${origin}/og-v2.png`],
     },
   };
 }
