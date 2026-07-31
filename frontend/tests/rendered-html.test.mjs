@@ -162,3 +162,16 @@ test("starter preview implementation is removed", async () => {
   assert.match(appSource, /github\.com\/apps\/deltacodeapp\/installations\/new/);
   assert.match(appSource, /github\.com\/amansriven\/DeltaCode/);
 });
+
+test("GitHub identity uses the authenticated user's name and avatar fallback", async () => {
+  const { readFile } = await import("node:fs/promises");
+  const appSource = await readFile(new URL("../app/DeltaCodeApp.tsx", import.meta.url), "utf8");
+  const dataSource = await readFile(new URL("../app/lib/data.ts", import.meta.url), "utf8");
+
+  assert.match(dataSource, /name: string \| null/);
+  assert.match(appSource, /function userDisplayName/);
+  assert.match(appSource, /function userInitials/);
+  assert.match(appSource, /<UserAvatar user=\{user\}/);
+  assert.doesNotMatch(appSource, /Connected as amansriven/);
+  assert.doesNotMatch(dataSource, /amansriven\//);
+});

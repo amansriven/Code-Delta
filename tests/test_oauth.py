@@ -1,6 +1,51 @@
 from app import oauth
 
 
+def test_github_display_name_normalizes_optional_profile_name():
+    assert oauth._github_display_name({"name": "  The Octocat  "}) == "The Octocat"
+    assert oauth._github_display_name({"name": "   "}) is None
+    assert oauth._github_display_name({"name": None}) is None
+    assert oauth._github_display_name({}) is None
+
+
+def test_me_returns_public_identity_without_credentials(monkeypatch):
+    monkeypatch.setattr(
+        oauth,
+        "get_session",
+        lambda _request: {
+            "github_user_id": 1,
+            "github_login": "octocat",
+            "github_name": "The Octocat",
+            "avatar_url": "https://avatars.githubusercontent.com/u/1",
+            "accessible_repos": ["acme/example"],
+            "repositories": [
+                {
+                    "full_name": "acme/example",
+                    "private": True,
+                    "visibility": "private",
+                }
+            ],
+        },
+    )
+
+    response = oauth.me(object())
+
+    assert response == {
+        "login": "octocat",
+        "name": "The Octocat",
+        "avatar_url": "https://avatars.githubusercontent.com/u/1",
+        "accessible_repos": ["acme/example"],
+        "repositories": [
+            {
+                "full_name": "acme/example",
+                "private": True,
+                "visibility": "private",
+            }
+        ],
+    }
+    assert not {"token", "access_token", "credentials"} & response.keys()
+
+
 def test_frontend_redirect_accepts_relative_paths(monkeypatch):
     monkeypatch.setattr(oauth, "FRONTEND_URL", "https://delta.example")
 

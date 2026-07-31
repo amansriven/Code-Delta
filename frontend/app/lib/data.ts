@@ -87,14 +87,14 @@ const missingItem: Finding = {
 export const demoRuns: RunSummary[] = [
   {
     id: 15,
-    repo: "amansriven/delta-code-demo-app",
+    repo: "acme/delta-code-demo-app",
     pr_number: 4,
     status: "running",
     created_at: "2026-07-27T14:42:08.000Z",
   },
   {
     id: 14,
-    repo: "amansriven/delta-code-demo-app",
+    repo: "acme/delta-code-demo-app",
     pr_number: 1,
     status: "done",
     created_at: "2026-07-27T13:51:34.538Z",
@@ -103,7 +103,7 @@ export const demoRuns: RunSummary[] = [
   },
   {
     id: 13,
-    repo: "amansriven/inventory-api",
+    repo: "acme/inventory-api",
     pr_number: 28,
     status: "done",
     created_at: "2026-07-27T12:49:18.073Z",
@@ -112,7 +112,7 @@ export const demoRuns: RunSummary[] = [
   },
   {
     id: 12,
-    repo: "amansriven/payments-service",
+    repo: "acme/payments-service",
     pr_number: 83,
     status: "done",
     created_at: "2026-07-26T20:12:04.000Z",
@@ -121,7 +121,7 @@ export const demoRuns: RunSummary[] = [
   },
   {
     id: 11,
-    repo: "amansriven/inventory-api",
+    repo: "acme/inventory-api",
     pr_number: 27,
     status: "pending",
     created_at: "2026-07-26T18:02:41.000Z",
@@ -236,6 +236,7 @@ export const githubRepositoryRefreshUrl =
 
 export interface CurrentUser {
   login: string;
+  name: string | null;
   avatar_url: string | null;
   accessible_repos: string[];
   repositories?: RepositoryAccess[];

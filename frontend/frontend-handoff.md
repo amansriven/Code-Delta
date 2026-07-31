@@ -35,8 +35,8 @@ payload, just enough for a list view.
 
 ```json
 [
-  {"id": 14, "repo": "amansriven/delta-code-demo-app", "pr_number": 1, "status": "done", "created_at": "2026-07-27T06:51:34.538262+00:00"},
-  {"id": 13, "repo": "amansriven/delta-code-demo-app", "pr_number": 1, "status": "done", "created_at": "2026-07-27T06:49:18.073678+00:00"}
+  {"id": 14, "repo": "acme/delta-code-demo-app", "pr_number": 1, "status": "done", "created_at": "2026-07-27T06:51:34.538262+00:00"},
+  {"id": 13, "repo": "acme/delta-code-demo-app", "pr_number": 1, "status": "done", "created_at": "2026-07-27T06:49:18.073678+00:00"}
 ]
 ```
 
@@ -47,7 +47,7 @@ Full run detail including findings. Real example, from an actual PR run
 ```json
 {
   "id": 14,
-  "repo": "amansriven/delta-code-demo-app",
+  "repo": "acme/delta-code-demo-app",
   "pr_number": 1,
   "status": "done",
   "result": {

@@ -205,6 +205,45 @@ function PublicFooter() {
   );
 }
 
+function userDisplayName(user: CurrentUser | null): string {
+  return user?.name?.trim() || user?.login || "Account";
+}
+
+function userInitials(user: CurrentUser | null): string {
+  const name = user?.name?.trim();
+  if (name) {
+    const parts = name.split(/\s+/).filter(Boolean);
+    const first = parts[0];
+    const last = parts[parts.length - 1];
+    return parts.length > 1
+      ? `${first[0]}${last[0]}`.toUpperCase()
+      : first.slice(0, 2).toUpperCase();
+  }
+
+  const login = user?.login.replace(/[^a-z0-9]/gi, "");
+  return login?.slice(0, 2).toUpperCase() || "DC";
+}
+
+function UserAvatar({
+  user,
+  className = "",
+  size = 34,
+}: {
+  user: CurrentUser | null;
+  className?: string;
+  size?: number;
+}) {
+  return (
+    <span className={`avatar ${className}`.trim()} aria-hidden="true">
+      {user?.avatar_url ? (
+        <Image src={user.avatar_url} alt="" width={size} height={size} />
+      ) : (
+        userInitials(user)
+      )}
+    </span>
+  );
+}
+
 function AppHeader({ active }: { active: DashboardSection }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -234,7 +273,7 @@ function AppHeader({ active }: { active: DashboardSection }) {
     return () => window.removeEventListener("keydown", handleShortcut);
   }, []);
 
-  const initials = user?.login ? user.login.slice(0, 2).toUpperCase() : "DC";
+  const displayName = userDisplayName(user);
   const visibleCommands = dashboardNavigation.filter((item) => {
     const normalized = commandQuery.trim().toLowerCase();
     return (
@@ -291,28 +330,26 @@ function AppHeader({ active }: { active: DashboardSection }) {
             <button
               type="button"
               className="sidebar-account-button"
-              aria-label={user ? `Signed in as ${user.login}` : "Account menu"}
+              aria-label={user ? `Signed in as ${displayName}` : "Account menu"}
               aria-haspopup="true"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((open) => !open)}
             >
-              <span className="avatar">
-                {user?.avatar_url ? (
-                  <Image src={user.avatar_url} alt="" width={34} height={34} />
-                ) : (
-                  initials
-                )}
-              </span>
+              <UserAvatar user={user} />
               <span>
-                <strong>{user?.login || "Preview account"}</strong>
-                <small>{user ? `${user.accessible_repos.length} repositories` : "Explore Delta Code"}</small>
+                <strong>{user ? displayName : "Sign in"}</strong>
+                <small>
+                  {user
+                    ? `@${user.login} · ${user.accessible_repos.length} repositories`
+                    : "Connect your GitHub account"}
+                </small>
               </span>
               <i aria-hidden="true">⌄</i>
             </button>
             {menuOpen && (
               <div className="account-dropdown sidebar-account-dropdown" role="menu">
                 <span className="account-dropdown-name">
-                  {user ? `@${user.login}` : "Not signed in"}
+                  {user ? displayName : "Not signed in"}
                 </span>
                 {user ? (
                   <>
@@ -363,12 +400,12 @@ function AppHeader({ active }: { active: DashboardSection }) {
           </div>
           <div className="account-cluster">
             {!liveApiUrl && <DemoPill />}
-            <a className="topbar-avatar avatar" href="/settings/account" aria-label="Account settings">
-              {user?.avatar_url ? (
-                <Image src={user.avatar_url} alt="" width={32} height={32} />
-              ) : (
-                initials
-              )}
+            <a
+              className="topbar-avatar"
+              href="/settings/account"
+              aria-label={user ? `Account settings for ${displayName}` : "Account settings"}
+            >
+              <UserAvatar user={user} size={32} />
             </a>
           </div>
         </div>
@@ -459,6 +496,7 @@ function repoParts(repo: string) {
 
 const previewUser: CurrentUser = {
   login: "preview-user",
+  name: "Preview account",
   avatar_url: null,
   accessible_repos: [...new Set(demoRuns.map((run) => run.repo))],
   repositories: [...new Set(demoRuns.map((run) => run.repo))].map((full_name, index) => ({
@@ -1100,6 +1138,15 @@ function LoginPage() {
 }
 
 function OnboardingPage() {
+  const [user, setUser] = useState<CurrentUser | null>(liveApiUrl ? null : previewUser);
+
+  useEffect(() => {
+    if (!liveApiUrl) return;
+    const controller = new AbortController();
+    fetchMe(controller.signal).then(setUser).catch(() => setUser(null));
+    return () => controller.abort();
+  }, []);
+
   return (
     <main className="onboarding-page">
       <header className="onboarding-header">
@@ -1116,14 +1163,18 @@ function OnboardingPage() {
           </p>
         </div>
         <div className="setup-grid">
-          <article className="setup-step complete">
-            <span className="step-icon">✓</span>
+          <article className={`setup-step ${user ? "complete" : ""}`}>
+            <span className="step-icon">{user ? "✓" : "01"}</span>
             <div>
               <small>Step 1</small>
               <h2>GitHub identity</h2>
-              <p>Connected as amansriven</p>
+              <p>
+                {user
+                  ? `Connected as ${userDisplayName(user)} (@${user.login})`
+                  : "Sign in to connect your GitHub identity"}
+              </p>
             </div>
-            <span className="step-state">Complete</span>
+            <span className="step-state">{user ? "Complete" : "Required"}</span>
           </article>
           <article className="setup-step current">
             <span className="step-icon">02</span>
@@ -1271,7 +1322,7 @@ function OverviewPage() {
         <div className="overview-welcome">
           <div>
             <span className="section-kicker">Workspace overview</span>
-            <h1>{user ? `Welcome back, ${user.login}` : "Your API change workspace"}</h1>
+            <h1>{user ? `Welcome back, ${userDisplayName(user)}` : "Your API change workspace"}</h1>
             <p>
               {repositories.length} {repositories.length === 1 ? "repository" : "repositories"} accessible
               {" · "}
@@ -2317,13 +2368,9 @@ function IntegrationsPage() {
               <section>
                 <span className="integration-section-label">Connected account</span>
                 <div className="identity-row integration-identity">
-                  {user?.avatar_url ? (
-                    <Image className="settings-avatar" src={user.avatar_url} alt="" width={46} height={46} />
-                  ) : (
-                    <span className="avatar">{user?.login.slice(0, 2).toUpperCase() || "DC"}</span>
-                  )}
+                  <UserAvatar user={user} className="settings-avatar" size={46} />
                   <span>
-                    <strong>{user?.login || "Preview account"}</strong>
+                    <strong>{user ? userDisplayName(user) : "Sign in"}</strong>
                     <a
                       href={user ? `https://github.com/${user.login}` : githubLoginUrl}
                       target={user ? "_blank" : undefined}
@@ -2492,21 +2539,11 @@ function SettingsPage({ tab }: { tab: "account" | "repositories" }) {
                 <p>Your GitHub identity controls access to this dashboard.</p>
               </div>
               <div className="identity-row">
-                {user.avatar_url ? (
-                  <Image
-                    className="settings-avatar"
-                    src={user.avatar_url}
-                    alt=""
-                    width={38}
-                    height={38}
-                  />
-                ) : (
-                  <span className="avatar">{user.login.slice(0, 2).toUpperCase()}</span>
-                )}
+                <UserAvatar user={user} className="settings-avatar" size={38} />
                 <span>
-                  <strong>{user.login}</strong>
+                  <strong>{userDisplayName(user)}</strong>
                   <a href={`https://github.com/${user.login}`} target="_blank" rel="noreferrer">
-                    View GitHub profile ↗
+                    @{user.login} · View GitHub profile ↗
                   </a>
                 </span>
               </div>

@@ -109,6 +109,15 @@ def _fetch_repository_access(user_token: str) -> list[dict]:
     return sorted(repositories.values(), key=lambda repo: repo["full_name"].lower())
 
 
+def _github_display_name(user: dict) -> str | None:
+    """Return GitHub's optional public profile name in a display-safe form."""
+    name = user.get("name")
+    if not isinstance(name, str):
+        return None
+    normalized = name.strip()
+    return normalized or None
+
+
 @router.get("/github/callback")
 def github_callback(request: Request, code: str, state: str):
     if state != request.cookies.get(STATE_COOKIE):
@@ -143,13 +152,14 @@ def github_callback(request: Request, code: str, state: str):
     with get_connection() as conn:
         conn.execute(
             "INSERT INTO sessions "
-            "(id, github_user_id, github_login, avatar_url, accessible_repos, "
-            "repositories, expires_at) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s)",
+            "(id, github_user_id, github_login, github_name, avatar_url, "
+            "accessible_repos, repositories, expires_at) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
             (
                 session_id,
                 user["id"],
                 user["login"],
+                _github_display_name(user),
                 user.get("avatar_url"),
                 json.dumps(accessible_repos),
                 json.dumps(repositories),
@@ -183,6 +193,7 @@ def me(request: Request):
     session = get_session(request)
     return {
         "login": session["github_login"],
+        "name": session["github_name"],
         "avatar_url": session["avatar_url"],
         "accessible_repos": session["accessible_repos"],
         "repositories": session["repositories"],
@@ -195,20 +206,22 @@ def get_session(request: Request) -> dict:
         raise HTTPException(status_code=401, detail="not signed in")
     with get_connection() as conn:
         row = conn.execute(
-            "SELECT github_user_id, github_login, avatar_url, accessible_repos, repositories "
+            "SELECT github_user_id, github_login, github_name, avatar_url, "
+            "accessible_repos, repositories "
             "FROM sessions "
             "WHERE id = %s AND expires_at > now()",
             (session_id,),
         ).fetchone()
     if row is None:
         raise HTTPException(status_code=401, detail="session expired or invalid")
-    repositories = row[4] or [
-        {"full_name": repo, "private": None, "visibility": "unknown"} for repo in row[3]
+    repositories = row[5] or [
+        {"full_name": repo, "private": None, "visibility": "unknown"} for repo in row[4]
     ]
     return {
         "github_user_id": row[0],
         "github_login": row[1],
-        "avatar_url": row[2],
-        "accessible_repos": row[3],
+        "github_name": row[2],
+        "avatar_url": row[3],
+        "accessible_repos": row[4],
         "repositories": repositories,
     }
