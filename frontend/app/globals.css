@@ -5955,6 +5955,58 @@ body {
   background: linear-gradient(135deg, var(--accent-strong), var(--accent));
 }
 
+:root[data-theme="light"] .button-quiet {
+  color: #27475f;
+  border-color: #abc0cf;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 1px 1px rgba(28, 61, 88, 0.04),
+    0 8px 22px rgba(38, 70, 96, 0.07);
+}
+
+:root[data-theme="light"] .button-quiet:not(:disabled):hover {
+  color: #102f46;
+  border-color: #7fa7ba;
+  background: #ffffff;
+  box-shadow:
+    0 1px 1px rgba(28, 61, 88, 0.05),
+    0 12px 27px rgba(38, 70, 96, 0.11);
+}
+
+:root[data-theme="light"] .button-quiet:not(:disabled):active {
+  color: #102f46;
+  border-color: #6f9caf;
+  background: #edf5f8;
+  box-shadow: 0 2px 8px rgba(38, 70, 96, 0.08);
+  transform: translateY(0);
+}
+
+:root[data-theme="dark"] .button-quiet {
+  color: #c2cfda;
+  border-color: #3b4c60;
+  background: rgba(21, 33, 47, 0.86);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.14);
+}
+
+:root[data-theme="dark"] .button-quiet:not(:disabled):hover {
+  color: #f4f8fb;
+  border-color: #52677f;
+  background: #1a293a;
+}
+
+.button:focus-visible,
+.theme-switch:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  outline-offset: 3px;
+}
+
+:root[data-theme="light"] .button:disabled {
+  color: #8192a0;
+  border-color: #d2dee6;
+  background: #edf2f5;
+  opacity: 0.72;
+}
+
 :root[data-theme="dark"] .hero h1 em {
   background: linear-gradient(100deg, #68d5e5 5%, #69b9dc 50%, #72d1ae 95%);
   background-clip: text;
@@ -6019,45 +6071,94 @@ body {
 }
 
 .theme-toggle {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 3px;
+  display: block;
   padding: 3px;
   border: 1px solid var(--border-soft);
-  border-radius: 10px;
+  border-radius: 11px;
   background: var(--canvas-soft);
 }
 
-.theme-toggle button {
-  min-height: 32px;
-  display: inline-flex;
+.theme-toggle .theme-switch {
+  position: relative;
+  width: 100%;
+  min-height: 34px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   align-items: center;
-  justify-content: center;
-  gap: 7px;
-  padding: 0 10px;
+  padding: 0;
   border: 0;
-  border-radius: 7px;
+  border-radius: 8px;
   color: var(--text-muted);
   background: transparent;
   cursor: pointer;
-  font-size: 10px;
-  font-weight: 700;
+  isolation: isolate;
 }
 
-.theme-toggle button.active {
-  color: var(--accent-strong);
+.theme-switch-option {
+  position: relative;
+  z-index: 2;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 730;
+  transition: color 180ms ease;
+}
+
+.theme-switch-option em {
+  font-style: normal;
+  font-size: 10px;
+}
+
+.theme-switch-thumb {
+  position: absolute;
+  z-index: 1;
+  inset: 0 50% 0 0;
+  border: 1px solid color-mix(in srgb, var(--accent) 14%, var(--border-soft));
+  border-radius: 7px;
   background: var(--surface);
-  box-shadow: 0 2px 8px rgba(29, 63, 90, 0.09);
+  box-shadow: 0 2px 8px rgba(29, 63, 90, 0.1);
+  transition:
+    transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background 180ms ease,
+    border-color 180ms ease;
+}
+
+.theme-switch.theme-dark .theme-switch-thumb {
+  transform: translateX(100%);
+}
+
+.theme-switch.theme-light .theme-switch-option:first-of-type,
+.theme-switch.theme-dark .theme-switch-option:last-of-type {
+  color: var(--accent-strong);
+}
+
+.theme-toggle .theme-switch:hover .theme-switch-thumb {
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--border));
+}
+
+.theme-toggle .theme-switch:active .theme-switch-thumb {
+  transform: scale(0.96);
+}
+
+.theme-toggle .theme-switch.theme-dark:active .theme-switch-thumb {
+  transform: translateX(100%) scale(0.96);
 }
 
 .theme-toggle-compact {
-  display: flex;
+  width: 72px;
   margin-left: 4px;
 }
 
-.theme-toggle-compact button {
-  width: 31px;
-  padding: 0;
+.theme-toggle-compact .theme-switch {
+  min-height: 30px;
+}
+
+.theme-toggle-compact .theme-switch-option {
+  font-size: 12px;
 }
 
 :root[data-theme="light"] .experience-backdrop {

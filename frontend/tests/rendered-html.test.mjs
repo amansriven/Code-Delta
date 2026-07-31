@@ -83,6 +83,7 @@ test("server-renders the Delta Code landing page", async () => {
   assert.match(html, /Ship API changes/);
   assert.match(html, /without the guesswork/);
   assert.match(html, /Everything you need to review API behavior/);
+  assert.match(html, /auth\/github\/login\?redirect_uri=%2Foverview/);
   assert.doesNotMatch(html, /codex-preview/);
   assert.doesNotMatch(html, /react-loading-skeleton/);
 });
@@ -156,5 +157,8 @@ test("starter preview implementation is removed", async () => {
   await assert.rejects(access(new URL("../app/_sites-preview", templateRoot)));
 
   const packageJson = await readFile(new URL("../package.json", import.meta.url), "utf8");
+  const appSource = await readFile(new URL("../app/DeltaCodeApp.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
+  assert.match(appSource, /github\.com\/apps\/deltacodeapp\/installations\/new/);
+  assert.doesNotMatch(appSource, /github\.com\/apps\/codedeltaapp/);
 });

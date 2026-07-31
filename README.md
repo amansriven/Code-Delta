@@ -30,8 +30,11 @@ add:
 NEXT_PUBLIC_DELTA_CODE_API_URL=https://web-production-e59907.up.railway.app
 ```
 
-Vercel will provide a temporary `*.vercel.app` address. A custom production
-domain can be attached when it is ready.
+The current production frontend is:
+
+**[deltacode-tau.vercel.app](https://deltacode-tau.vercel.app/)**
+
+A custom production domain can be attached when it is ready.
 
 ### Brand cutover checklist
 
@@ -40,14 +43,12 @@ defaults, documentation, and artwork now use **Delta Code**. A few
 provider-owned resources must be renamed in their respective dashboards before
 their URLs can be updated safely:
 
-1. Create the Vercel project with `frontend` as its root directory and deploy
-   it.
-2. Set Railway's `FRONTEND_URL` to the canonical Vercel URL and redeploy the
-   web service. Add any additional trusted frontend origins to Railway's
-   comma-separated `ALLOWED_ORIGINS` variable.
-3. Rename the GitHub App display name to **Delta Code**. If its public slug
-   changes from `codedeltaapp`, update `GITHUB_INSTALL_URL` in
-   `frontend/app/DeltaCodeApp.tsx`.
+1. The Vercel project uses `frontend` as its root directory.
+2. Railway's `FRONTEND_URL` must match the canonical Vercel URL. Add any
+   additional trusted frontend origins to Railway's comma-separated
+   `ALLOWED_ORIGINS` variable.
+3. The GitHub App is named **DeltaCodeApp** and uses the public slug
+   `deltacodeapp`.
 4. Rename the GitHub repository when ready, then update the repository link in
    the frontend footer.
 5. Optionally rename the Railway service display names; the existing `web` and

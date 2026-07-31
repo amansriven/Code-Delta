@@ -1,6 +1,6 @@
 "use client";
 
-/* eslint-disable @next/next/no-html-link-for-pages -- Vinext's Next Link shim causes duplicate-React hydration failures in local development. */
+/* eslint-disable @next/next/no-html-link-for-pages -- Native anchors keep public and dashboard navigation explicit. */
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -24,7 +24,7 @@ import {
 } from "./lib/data";
 
 const PRODUCT_NAME = "Delta Code";
-const GITHUB_INSTALL_URL = "https://github.com/apps/codedeltaapp/installations/new";
+const GITHUB_INSTALL_URL = "https://github.com/apps/deltacodeapp/installations/new";
 type DashboardSection = "overview" | "runs" | "repositories" | "integrations" | "settings";
 type ThemePreference = "light" | "dark";
 
@@ -112,27 +112,24 @@ function Wordmark({ compact = false }: { compact?: boolean }) {
 
 function ThemeToggle({ compact = false }: { compact?: boolean }) {
   const { theme, chooseTheme } = useThemePreference();
+  const nextTheme = theme === "light" ? "dark" : "light";
   return (
     <div className={`theme-toggle ${compact ? "theme-toggle-compact" : ""}`} aria-label="Color theme">
       <button
         type="button"
-        className={theme === "light" ? "active" : ""}
-        aria-label="Use light theme"
-        aria-pressed={theme === "light"}
-        onClick={() => chooseTheme("light")}
+        className={`theme-switch theme-${theme}`}
+        role="switch"
+        aria-checked={theme === "dark"}
+        aria-label={`Switch to ${nextTheme} theme`}
+        onClick={() => chooseTheme(nextTheme)}
       >
-        <span aria-hidden="true">☼</span>
-        {!compact && "Light"}
-      </button>
-      <button
-        type="button"
-        className={theme === "dark" ? "active" : ""}
-        aria-label="Use dark theme"
-        aria-pressed={theme === "dark"}
-        onClick={() => chooseTheme("dark")}
-      >
-        <span aria-hidden="true">☾</span>
-        {!compact && "Dark"}
+        <span className="theme-switch-option" aria-hidden="true">
+          ☼ {!compact && <em>Light</em>}
+        </span>
+        <i className="theme-switch-thumb" aria-hidden="true" />
+        <span className="theme-switch-option" aria-hidden="true">
+          ☾ {!compact && <em>Dark</em>}
+        </span>
       </button>
     </div>
   );

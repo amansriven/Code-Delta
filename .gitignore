@@ -15,3 +15,5 @@ frontend/next-env.d.ts
 frontend/.env*
 frontend/*.pem
 frontend/.DS_Store
+.vercel
+.env*

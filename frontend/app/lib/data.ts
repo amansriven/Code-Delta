@@ -228,9 +228,11 @@ export async function retryRun(
   return response.json();
 }
 
-export const githubLoginUrl = `${liveApiUrl}/auth/github/login`;
+const githubLoginBaseUrl = `${liveApiUrl}/auth/github/login`;
+export const githubLoginUrl =
+  `${githubLoginBaseUrl}?redirect_uri=${encodeURIComponent("/overview")}`;
 export const githubRepositoryRefreshUrl =
-  `${githubLoginUrl}?redirect_uri=${encodeURIComponent("/settings/integrations")}`;
+  `${githubLoginBaseUrl}?redirect_uri=${encodeURIComponent("/settings/integrations")}`;
 
 export interface CurrentUser {
   login: string;
