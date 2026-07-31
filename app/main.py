@@ -1,9 +1,11 @@
+import os
+
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from app.db import get_connection, init_schema
-from app.oauth import get_session
+from app.oauth import FRONTEND_URL, get_session
 from app.oauth import router as oauth_router
 from app.procrastinate_app import procrastinate_app
 from app.tasks import run_comparison
@@ -13,12 +15,20 @@ app = FastAPI(title="Delta Code")
 app.include_router(webhook_router)
 app.include_router(oauth_router)
 
+allowed_origins = {
+    FRONTEND_URL,
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+}
+allowed_origins.update(
+    origin.strip().rstrip("/")
+    for origin in os.environ.get("ALLOWED_ORIGINS", "").split(",")
+    if origin.strip()
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://deltacode.amansriven757.workers.dev",
-        "http://localhost:3000",
-    ],
+    allow_origins=sorted(allowed_origins),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

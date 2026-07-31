@@ -31,10 +31,6 @@
     "**/*.mts"
   ],
   "exclude": [
-    "node_modules",
-    "db/**/*",
-    "worker/**/*",
-    "examples/**/*",
-    "drizzle.config.ts"
+    "node_modules"
   ]
 }

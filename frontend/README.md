@@ -1,8 +1,8 @@
 # Delta Code frontend
 
 The Delta Code frontend contains the public product site and authenticated API
-regression dashboard. It runs on React 19, TypeScript, Vinext, and Cloudflare
-Workers.
+regression dashboard. It runs on React 19, TypeScript, and native Next.js, and
+is deployed on Vercel.
 
 ## Local development
 
@@ -53,9 +53,24 @@ application sidebar, public header, or account settings.
 
 - `npm run dev` — start local development
 - `npm run lint` — run ESLint
-- `npm run build` — create a production Worker build
+- `npm run build` — create a production Next.js build
 - `npm test` — build and verify all rendered routes
-- `npx wrangler deploy` — deploy the `deltacode` Worker
+- `npx vercel deploy` — create a Vercel preview deployment
+- `npx vercel deploy --prod` — deploy to Vercel production
 
-The Worker name and public API environment variable are configured in
-`wrangler.jsonc`.
+## Vercel deployment
+
+Import the repository into Vercel and configure:
+
+- **Project Name:** `deltacode`
+- **Framework Preset:** Next.js
+- **Root Directory:** `frontend`
+- **Production Branch:** `main`
+- **Environment variable:**
+  `NEXT_PUBLIC_DELTA_CODE_API_URL=https://web-production-e59907.up.railway.app`
+
+After the first production deployment, copy the canonical Vercel URL into the
+Railway web service's `FRONTEND_URL` variable and redeploy Railway. This enables
+OAuth redirects and credentialed CORS for the new frontend. Preview domains
+that need authenticated API access must also be explicitly added to Railway's
+comma-separated `ALLOWED_ORIGINS` variable.

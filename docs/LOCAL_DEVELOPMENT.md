@@ -11,7 +11,7 @@ help` at any time to see the available commands.
 - Git
 - GNU Make or the Make version included with macOS
 
-Railway CLI and Wrangler are only required for deployment.
+Railway CLI and the Vercel CLI are only required for command-line deployment.
 
 ## First-time setup
 
@@ -123,9 +123,10 @@ make db-down
 
 ## Deploy the hosted services
 
-Authenticate the Railway and Cloudflare CLIs before the first deployment. The
-Railway project must be linked to this repository and contain services named
-`web` and `worker`.
+Authenticate the Railway and Vercel CLIs before the first command-line
+deployment. The Railway project must be linked to this repository and contain
+services named `web` and `worker`. The Vercel project should be named
+`deltacode` and use `frontend` as its root directory.
 
 Deploy both Railway services and wait for each build to finish:
 
@@ -140,7 +141,7 @@ make deploy-web
 make deploy-worker
 ```
 
-Build and deploy the Vinext Cloudflare Worker:
+Build and deploy the native Next.js frontend to Vercel production:
 
 ```bash
 make deploy-frontend
@@ -164,6 +165,10 @@ After deployment, verify the public backend:
 make health-live
 ```
 
-The production service variables remain managed by Railway and Cloudflare;
+Set `NEXT_PUBLIC_DELTA_CODE_API_URL` in Vercel. Set Railway's `FRONTEND_URL` to
+the canonical Vercel production URL, and add any additional trusted preview
+origins to `ALLOWED_ORIGINS` as a comma-separated list.
+
+The production service variables remain managed by Railway and Vercel;
 the Makefile never embeds database credentials, GitHub secrets, or private
 keys.

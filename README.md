@@ -22,14 +22,16 @@
 ---
 ## Frontend deployment
 
-The Cloudflare Worker is configured with the new `deltacode` site name. After
-the renamed frontend is created and deployed, its Workers URL will be:
+The frontend is configured as a native Next.js application for Vercel. Create
+the Vercel project as `deltacode`, set its **Root Directory** to `frontend`, and
+add:
 
-**[deltacode.amansriven757.workers.dev](https://deltacode.amansriven757.workers.dev)**
+```text
+NEXT_PUBLIC_DELTA_CODE_API_URL=https://web-production-e59907.up.railway.app
+```
 
-> **Work in progress:** Delta Code is under active development. The new Workers
-> site must be deployed before this URL becomes available. A custom production
-> domain will be added later.
+Vercel will provide a temporary `*.vercel.app` address. A custom production
+domain can be attached when it is ready.
 
 ### Brand cutover checklist
 
@@ -38,9 +40,11 @@ defaults, documentation, and artwork now use **Delta Code**. A few
 provider-owned resources must be renamed in their respective dashboards before
 their URLs can be updated safely:
 
-1. Create and deploy the Cloudflare Worker named `deltacode`.
-2. Set Railway's `FRONTEND_URL` to the new Workers URL and redeploy the web
-   service.
+1. Create the Vercel project with `frontend` as its root directory and deploy
+   it.
+2. Set Railway's `FRONTEND_URL` to the canonical Vercel URL and redeploy the
+   web service. Add any additional trusted frontend origins to Railway's
+   comma-separated `ALLOWED_ORIGINS` variable.
 3. Rename the GitHub App display name to **Delta Code**. If its public slug
    changes from `codedeltaapp`, update `GITHUB_INSTALL_URL` in
    `frontend/app/DeltaCodeApp.tsx`.
@@ -374,6 +378,7 @@ public and private repositories separately.
 | `GITHUB_OAUTH_CLIENT_SECRET` | Dashboard login | Client secret for the GitHub OAuth App. |
 | `GITHUB_OAUTH_CALLBACK_URL` | Dashboard login | Public backend OAuth callback URL. |
 | `FRONTEND_URL` | Hosted backend | Public frontend URL used after login and logout. |
+| `ALLOWED_ORIGINS` | Optional backend | Comma-separated additional trusted frontend origins. |
 | `OLLAMA_URL` | Optional AI | Ollama-compatible API base URL. |
 | `OLLAMA_MODEL` | Optional AI | Model used to enrich generated cases and explanations. |
 | `NEXT_PUBLIC_DELTA_CODE_API_URL` | Hosted frontend | Public base URL of the Delta Code API. |

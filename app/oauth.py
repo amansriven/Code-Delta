@@ -17,8 +17,8 @@ CLIENT_ID = os.environ.get("GITHUB_OAUTH_CLIENT_ID")
 CLIENT_SECRET = os.environ.get("GITHUB_OAUTH_CLIENT_SECRET")
 CALLBACK_URL = os.environ.get("GITHUB_OAUTH_CALLBACK_URL")
 FRONTEND_URL = os.environ.get(
-    "FRONTEND_URL", "https://deltacode.amansriven757.workers.dev"
-)
+    "FRONTEND_URL", "http://localhost:3000"
+).rstrip("/")
 
 SESSION_TTL = timedelta(days=7)
 STATE_COOKIE = "oauth_state"

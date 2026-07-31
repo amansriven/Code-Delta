@@ -6,6 +6,7 @@ PROCRASTINATE := PYTHONPATH=. $(PYTHON) -m procrastinate --app app.procrastinate
 API_URL ?= http://localhost:8000
 LIVE_API_URL ?= https://web-production-e59907.up.railway.app
 RAILWAY_ENV ?= production
+VERCEL_SCOPE ?=
 
 .DEFAULT_GOAL := help
 
@@ -22,14 +23,14 @@ help:
 	@echo "  make db-schema         Apply the Procrastinate database schema"
 	@echo "  make api               Run the FastAPI server on :8000"
 	@echo "  make worker            Run the background comparison worker"
-	@echo "  make frontend-dev      Run Vinext on :3000 against LIVE_API_URL"
+	@echo "  make frontend-dev      Run Next.js on :3000 against LIVE_API_URL"
 	@echo "  make lint              Lint backend and frontend"
 	@echo "  make test              Run every backend and frontend check"
 	@echo "  make build             Build the production frontend"
 	@echo "  make health            Check the local backend health endpoint"
 	@echo "  make health-live       Check the hosted backend health endpoint"
 	@echo "  make deploy-backend    Deploy Railway web and worker services"
-	@echo "  make deploy-frontend   Build and deploy the Cloudflare Worker"
+	@echo "  make deploy-frontend   Deploy the frontend to Vercel production"
 	@echo "  make deploy            Deploy backend and frontend"
 
 setup: backend-setup frontend-setup frontend-env
@@ -105,4 +106,4 @@ deploy-worker:
 	railway up --service worker --environment "$(RAILWAY_ENV)" --ci -m "Deploy Delta Code worker"
 
 deploy-frontend: build
-	cd frontend && npx wrangler deploy
+	cd frontend && npx vercel deploy --prod $(if $(VERCEL_SCOPE),--scope "$(VERCEL_SCOPE)",)

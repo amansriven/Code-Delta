@@ -1,27 +1,76 @@
 import assert from "node:assert/strict";
-import test from "node:test";
+import { spawn } from "node:child_process";
+import { createServer } from "node:net";
+import { fileURLToPath } from "node:url";
+import test, { after, before } from "node:test";
 
 const templateRoot = new URL("../", import.meta.url);
+const frontendDirectory = fileURLToPath(templateRoot);
+let serverProcess;
+let baseUrl;
+let serverOutput = "";
 
-async function render(path = "/") {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}-${path}`);
-  const { default: worker } = await import(workerUrl.href);
+async function reservePort() {
+  const server = createServer();
+  await new Promise((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", resolve);
+  });
+  const address = server.address();
+  assert.ok(address && typeof address !== "string");
+  const { port } = address;
+  await new Promise((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+  return port;
+}
 
-  return worker.fetch(
-    new Request(`http://localhost${path}`, {
-      headers: { accept: "text/html" },
-    }),
+before(async () => {
+  const port = await reservePort();
+  baseUrl = `http://127.0.0.1:${port}`;
+  serverProcess = spawn(
+    process.execPath,
+    ["node_modules/next/dist/bin/next", "start", "--hostname", "127.0.0.1", "--port", String(port)],
     {
-      ASSETS: {
-        fetch: async () => new Response("Not found", { status: 404 }),
-      },
-    },
-    {
-      waitUntil() {},
-      passThroughOnException() {},
+      cwd: frontendDirectory,
+      env: { ...process.env, NODE_ENV: "production" },
+      stdio: ["ignore", "pipe", "pipe"],
     },
   );
+  serverProcess.stdout.on("data", (chunk) => {
+    serverOutput += chunk;
+  });
+  serverProcess.stderr.on("data", (chunk) => {
+    serverOutput += chunk;
+  });
+
+  const deadline = Date.now() + 20_000;
+  while (Date.now() < deadline) {
+    if (serverProcess.exitCode !== null) {
+      throw new Error(`Next.js exited before becoming ready.\n${serverOutput}`);
+    }
+    try {
+      const response = await fetch(baseUrl);
+      if (response.ok) return;
+    } catch {
+      // The server is still starting.
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  throw new Error(`Timed out waiting for Next.js.\n${serverOutput}`);
+});
+
+after(async () => {
+  if (!serverProcess || serverProcess.exitCode !== null) return;
+  serverProcess.kill("SIGTERM");
+  await Promise.race([
+    new Promise((resolve) => serverProcess.once("exit", resolve)),
+    new Promise((resolve) => setTimeout(resolve, 5_000)),
+  ]);
+});
+
+async function render(path = "/") {
+  return fetch(new URL(path, baseUrl), {
+    headers: { accept: "text/html" },
+  });
 }
 
 test("server-renders the Delta Code landing page", async () => {
