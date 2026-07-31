@@ -7,8 +7,14 @@
 </p>
 
 <p align="center">
-  Delta Code generates targeted edge-case requests, runs them against both sides of
-  a pull request, and reports only the behavior that actually changed.
+  Delta Code runs the same targeted requests against both sides of a pull
+  request and shows the behavior that actually changed.
+</p>
+
+<p align="center">
+  <a href="https://deltacode-tau.vercel.app/"><strong>Explore Delta Code</strong></a>
+  ·
+  <a href="api-verifier-spec.md">Product brief</a>
 </p>
 
 <p align="center">
@@ -16,59 +22,51 @@
   <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-API-009688?style=flat-square&logo=fastapi&logoColor=white">
   <img alt="PostgreSQL" src="https://img.shields.io/badge/PostgreSQL-runs-4169E1?style=flat-square&logo=postgresql&logoColor=white">
   <img alt="React" src="https://img.shields.io/badge/React-dashboard-20232A?style=flat-square&logo=react&logoColor=61DAFB">
-  <img alt="Project stage" src="https://img.shields.io/badge/stage-MVP-70D6E7?style=flat-square">
+  <img alt="Project stage" src="https://img.shields.io/badge/stage-active%20MVP-168EB2?style=flat-square">
 </p>
 
 ---
-## Frontend deployment
 
-The frontend is configured as a native Next.js application for Vercel. Create
-the Vercel project as `deltacode`, set its **Root Directory** to `frontend`, and
-add:
+## The problem
 
-```text
-NEXT_PUBLIC_DELTA_CODE_API_URL=https://web-production-e59907.up.railway.app
-```
-
-The current production frontend is:
-
-**[deltacode-tau.vercel.app](https://deltacode-tau.vercel.app/)**
-
-A custom production domain can be attached when it is ready.
-
-### Brand cutover checklist
-
-The application code, package metadata, environment variables, database
-defaults, documentation, and artwork now use **Delta Code**. A few
-provider-owned resources must be renamed in their respective dashboards before
-their URLs can be updated safely:
-
-1. The Vercel project uses `frontend` as its root directory.
-2. Railway's `FRONTEND_URL` must match the canonical Vercel URL. Add any
-   additional trusted frontend origins to Railway's comma-separated
-   `ALLOWED_ORIGINS` variable.
-3. The GitHub App is named **DeltaCodeApp** and uses the public slug
-   `deltacodeapp`.
-4. Rename the GitHub repository when ready, then update the repository link in
-   the frontend footer.
-5. Optionally rename the Railway service display names; the existing `web` and
-   `worker` service identifiers can remain unchanged.
-
-The Greek delta (`Δ`) is reserved for the visual mark. Product copy and
-accessible text use the official name **Delta Code**.
-
-## Why Delta Code?
-
-API pull requests can look harmless in a code diff while silently changing
-runtime behavior:
+An API pull request can look harmless in a code diff while silently changing
+what clients experience:
 
 - an optional field becomes required;
 - a missing resource changes from `404` to `200`;
 - a valid payload starts returning `422`;
-- an edge case that worked on `main` now produces a server error.
+- an endpoint stops returning fields consumers depend on;
+- an edge case that worked on the base branch begins producing a server error.
 
-Traditional review tools can suggest that something *might* be wrong. Delta Code
-tests the change and shows what was observed:
+Code review and static analysis can suggest that something *might* be wrong,
+but reviewers still need to know whether the change can be reproduced.
+
+Delta Code answers a narrower, more useful question:
+
+> **Did the same request behave differently on this pull request than it did
+> on the base branch?**
+
+## What Delta Code does
+
+Delta Code connects to GitHub and evaluates API behavior whenever a monitored
+pull request opens or changes.
+
+It:
+
+1. fetches the base and pull-request revisions;
+2. reads and compares their OpenAPI specifications;
+3. identifies the endpoints, fields, and parameters affected by the change;
+4. generates focused edge cases for that changed surface;
+5. starts both versions of the API;
+6. sends equivalent requests to each version;
+7. compares the observed responses;
+8. stores only meaningful behavioral differences;
+9. publishes the result as a GitHub Check;
+10. makes the evidence available in the Delta Code dashboard.
+
+The result is evidence a reviewer can inspect instead of a speculative warning.
+
+## What the evidence looks like
 
 ```text
 POST /items
@@ -76,38 +74,25 @@ POST /items
 Request
 { "name": "example", "price": 1.0 }
 
-Base branch            Pull request
-201 Created      →      422 Unprocessable Entity
-discount: 0.0           discount: Field required
+Base branch                 Pull request
+201 Created          →      422 Unprocessable Entity
+discount: 0.0               discount: Field required
 ```
 
-That distinction is the product:
+Delta Code keeps the request, both responses, the status-code change, and the
+test-case identity together so the finding can be reproduced and discussed.
 
-> **The same request succeeded on the base branch and failed on the pull
-> request. Here are both responses.**
+## Finding semantics
 
-No speculative verdict. No pre-existing failures. Just reproducible evidence.
+| Finding | Meaning |
+| --- | --- |
+| `regression` | A request succeeded on the base branch but failed on the pull request. |
+| `status_code_changed` | Both branches responded, but their status codes changed in another reviewable way. |
+| No finding | The observed behavior was equivalent, or both versions already failed. The case is suppressed. |
 
-## What Delta Code does
-
-1. Receives a pull-request event from GitHub.
-2. Fetches the base and head revisions.
-3. Reads and diffs both OpenAPI specifications.
-4. Identifies changed endpoints, fields, and parameters.
-5. Generates focused edge cases for the changed surface.
-6. Starts both versions of the FastAPI application.
-7. Sends the same requests to each version.
-8. Keeps only requests whose behavior differs.
-9. Stores the run and publishes the evidence as a GitHub Check Run.
-10. Makes run history and response comparisons available to the dashboard.
-
-### Finding semantics
-
-| Finding | Meaning | Treatment |
-| --- | --- | --- |
-| `regression` | The base response succeeded, but the PR response failed. | High-severity evidence that the PR broke previously valid behavior. |
-| `status_code_changed` | Both branches responded, but their status codes differ in another way. | A behavior change worth reviewing without automatically calling it a regression. |
-| No finding | Both versions behaved equivalently, or both already failed. | Suppressed to keep review output focused. |
+This suppression is intentional. Delta Code focuses reviewers on behavior
+introduced by the pull request rather than flooding them with every request it
+attempted.
 
 ## How it works
 
@@ -115,331 +100,153 @@ No speculative verdict. No pre-existing failures. Just reproducible evidence.
 flowchart LR
     GH["GitHub pull request"] --> WH["Webhook API"]
     WH --> DB[("PostgreSQL run")]
-    DB --> Q["Procrastinate worker"]
+    DB --> Q["Background worker"]
     Q --> CLONE["Fetch base + head"]
-    CLONE --> SPEC["Diff OpenAPI specs"]
-    SPEC --> CASES["Generate edge cases"]
+    CLONE --> SPEC["Compare OpenAPI specs"]
+    SPEC --> CASES["Generate focused cases"]
     CASES --> BASE["Run against base"]
-    CASES --> HEAD["Run against PR"]
+    CASES --> HEAD["Run against pull request"]
     BASE --> COMPARE["Compare responses"]
     HEAD --> COMPARE
-    COMPARE --> RESULT["Reproduced findings"]
-    RESULT --> CHECK["GitHub Check Run"]
+    COMPARE --> RESULT["Reproduced evidence"]
+    RESULT --> CHECK["GitHub Check"]
     RESULT --> UI["Delta Code dashboard"]
 ```
 
-The job queue is backed by PostgreSQL through
-[Procrastinate](https://procrastinate.readthedocs.io/), so the MVP does not
-need Redis or Celery. Webhooks stay fast: they create a run, enqueue the work,
-and return while a separate worker performs the comparison.
+The webhook stays fast by creating a run and handing the comparison to a
+PostgreSQL-backed worker. The heavier work—checking out revisions, starting
+both applications, running cases, and comparing responses—happens
+asynchronously.
+
+## The product experience
+
+### GitHub-native verification
+
+Delta Code reports directly on the pull request as a GitHub Check. Reviewers
+can see whether verification passed, failed, or reproduced behavioral changes
+without leaving the workflow where the code is being reviewed.
+
+### Workspace overview
+
+The dashboard summarizes:
+
+- repositories available through the GitHub App;
+- active and recently completed runs;
+- repository health;
+- recent pass rate and regression activity;
+- verification history across the workspace.
+
+### Run evidence
+
+Each run includes:
+
+- repository and pull-request context;
+- base and head branches;
+- base and head commit identifiers;
+- run status and retry controls;
+- clear failure information;
+- reproduced requests;
+- side-by-side base and pull-request responses;
+- regression and behavior-change classifications.
+
+### Repository access
+
+Users can see which repositories Delta Code can access, distinguish public,
+private, internal, and unknown visibility, and manage the GitHub App
+installation through GitHub.
+
+### Accessible themes
+
+The interface is light-first with an optional low-glare dark theme. Both modes
+use the same semantic status colors, visible focus states, readable response
+evidence, reduced-motion support, and responsive layouts.
 
 ## Current capabilities
 
-- OpenAPI-aware detection of changed request bodies, path parameters, and
-  query parameters.
-- Generated cases for omitted fields, required-field changes, and type
-  changes.
-- Real base-versus-head execution in isolated subprocesses.
-- GitHub App webhook verification and Check Run publishing.
-- Asynchronous run lifecycle: `pending → running → done | failed`.
-- Persisted results, failure details, and retry support.
-- Demo FastAPI applications with intentionally introduced regressions.
-- Light-first responsive dashboard with an optional low-glare dark mode.
-- Workspace overview with repository health, recent activity, pass rate, and
-  regression summaries derived from the API.
-- Searchable run history with status filters and per-repository grouping.
-- Repository directory with public, private, internal, and unknown visibility.
-- GitHub integration details, permission explanations, and repository access
-  management.
-- Command palette navigation and a responsive application sidebar.
-- Rich run details with branch, commit, retry, failure, and side-by-side
-  response evidence.
-- Clearly distinguished regressions and non-regression behavior changes.
-- GitHub OAuth sessions with repository-scoped dashboard authorization.
-- Optional Ollama-assisted case generation and finding explanations, with a
-  deterministic fallback when no model is configured.
+- OpenAPI-aware changed-surface detection.
+- Generated cases for omitted fields, required-field changes, type changes,
+  path parameters, and query parameters.
+- Real base-versus-head execution.
+- GitHub webhook verification and Check Run publishing.
+- PostgreSQL-backed asynchronous run processing.
+- Persisted findings, failures, and retry support.
+- GitHub OAuth with repository-scoped dashboard authorization.
+- Authenticated checkout support for selected private repositories.
+- Workspace overview, run history, repository grouping, integrations, and
+  account settings.
+- Optional LLM-assisted case suggestions and finding explanations.
+- Deterministic operation when no model is available.
 
-## Supported repositories
+## Who Delta Code is for
 
-Delta Code deliberately keeps its first version narrow. A target repository should:
+Delta Code is designed for:
+
+- backend engineers reviewing API changes;
+- teams maintaining FastAPI services;
+- platform engineers responsible for pull-request quality gates;
+- API owners who need concrete compatibility evidence;
+- reviewers who want a faster path from code change to observable impact.
+
+## Current scope
+
+The active MVP is intentionally focused. Target repositories should currently:
 
 - use Python and FastAPI;
-- expose a working `/openapi.json`;
-- have a simple local startup path such as `uvicorn app.main:app`;
+- expose a working OpenAPI specification;
+- have a predictable local startup path;
 - run without complex external infrastructure, or provide local substitutes.
 
-Other languages, frameworks, stateful multi-step workflows, authentication
-matrices, and arbitrary multi-tenant code execution are outside the current
-MVP.
+Support for additional frameworks, stateful multi-step scenarios,
+authentication matrices, deeper response-schema comparison, and broader
+execution environments belongs to future iterations.
 
-## Repository structure
+## Security boundary
 
-```text
-DeltaCode/
-├── app/
-│   ├── main.py              # Runs API
-│   ├── webhook.py           # GitHub webhook receiver
-│   ├── tasks.py             # Background comparison jobs
-│   ├── engine.py            # Base-vs-PR execution and response comparison
-│   ├── cases.py             # Stable request-case identity and provenance
-│   ├── openapi_diff.py      # Changed-surface detection and case generation
-│   ├── llm.py               # Optional LLM case and explanation enrichment
-│   ├── repo_fetch.py        # Base/head repository checkout
-│   ├── github_client.py     # GitHub authentication and Check Runs
-│   └── db.py                # PostgreSQL schema and connection
-├── demo_apps/               # Base app plus intentionally broken variants
-├── frontend/                # Delta Code landing page and dashboard
-├── docs/assets/brand/       # Repository-safe brand artwork
-├── tests/                   # Unit and end-to-end engine tests
-├── api-verifier-spec.md     # Product scope and design rationale
-├── frontend-handoff.md      # Backend API shapes for the dashboard
-├── docker-compose.yml       # Local PostgreSQL
-├── pyproject.toml           # Python package, test, and lint configuration
-└── requirements.txt
-```
+Repository access is controlled by the GitHub App installation. Dashboard
+identity uses a separate GitHub OAuth flow, and run data is scoped to
+repositories the signed-in user can access.
 
-## Quick start
+The current worker executes checked-out pull-request code in its worker
+environment. Until that execution is fully sandboxed, Delta Code should be
+treated as a trusted-development MVP rather than a general multi-tenant
+execution service.
 
-For a command-oriented setup and deployment guide, see
-[docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md). The root Makefile
-provides `make setup`, `make test`, local service commands, and deployment
-helpers.
+## Technology
 
-### Prerequisites
+| Area | Technology |
+| --- | --- |
+| API and webhooks | FastAPI |
+| Run persistence | PostgreSQL |
+| Background work | Procrastinate |
+| API comparison | OpenAPI-derived cases and HTTP execution |
+| GitHub integration | GitHub Apps, OAuth, and Check Runs |
+| Dashboard | React, Next.js, TypeScript, and custom CSS |
+| Optional AI enrichment | Ollama-compatible language models |
 
-- Python 3.12+
-- Docker
-- Node.js 22.13+ for the frontend
-- Git
+## Product direction
 
-### 1. Start PostgreSQL
+Completed foundations include deterministic OpenAPI diffing, targeted case
+generation, real base-versus-pull-request execution, GitHub Checks, secure
+dashboard sessions, private-repository checkout, and the expanded product
+dashboard.
 
-```bash
-docker compose up -d
-```
+The next major product priorities are:
 
-The default local connection is:
+- sandboxed execution for untrusted pull-request code;
+- deeper response-body and schema comparison;
+- richer test-case generation informed by the pull-request diff;
+- clearer evidence explanations and developer guidance;
+- additional API frameworks and repository configurations;
+- pagination, observability, and operational controls for larger workspaces.
 
-```text
-postgresql://deltacode:deltacode@localhost:5432/deltacode
-```
+## Project documentation
 
-### 2. Install the backend
+- [Product specification](api-verifier-spec.md)
+- [Dashboard API contract](frontend-handoff.md)
+- [Local development and contributor runbook](docs/LOCAL_DEVELOPMENT.md)
 
-```bash
-python3 -m venv .venv
-./.venv/bin/pip install -e ".[dev]"
-PYTHONPATH=. ./.venv/bin/python -m procrastinate \
-  --app app.procrastinate_app.procrastinate_app schema --apply
-```
-
-### 3. Start the API
-
-```bash
-./.venv/bin/uvicorn app.main:app --reload
-```
-
-The API is available at `http://localhost:8000`.
-
-### 4. Start the worker
-
-In a second terminal:
-
-```bash
-PYTHONPATH=. ./.venv/bin/python -m procrastinate \
-  --app app.procrastinate_app.procrastinate_app worker
-```
-
-### 5. Run a local comparison
-
-Manually created runs use the bundled base and buggy demo applications:
-
-```bash
-curl -X POST http://localhost:8000/runs \
-  -H 'content-type: application/json' \
-  -d '{"repo": "local/delta-code-demo", "pr_number": 1}'
-
-curl http://localhost:8000/runs/1
-```
-
-### 6. Start the dashboard
-
-```bash
-cd frontend
-npm ci
-npm run dev
-```
-
-Open `http://localhost:3000`. The dashboard uses clearly labeled preview data
-by default. Set `NEXT_PUBLIC_DELTA_CODE_API_URL` when connecting it to a hosted
-API with the appropriate CORS and authentication configuration.
-
-## Tests and quality checks
-
-```bash
-./.venv/bin/ruff check app tests
-./.venv/bin/pytest -q
-
-cd frontend
-npm run lint
-npm test
-```
-
-GitHub Actions runs the same backend and frontend checks for pull requests and
-pushes to `main`.
-
-## API overview
-
-| Method | Endpoint | Purpose |
-| --- | --- | --- |
-| `GET` | `/health` | Return the web service liveness status. |
-| `GET` | `/auth/me` | Return the signed-in GitHub identity and accessible repositories. |
-| `GET` | `/auth/github/login` | Begin the GitHub OAuth sign-in flow. |
-| `POST` | `/auth/logout` | End the current dashboard session. |
-| `GET` | `/runs` | Return the 50 most recent runs. |
-| `GET` | `/runs/{id}` | Return a run and its reproduced findings. |
-| `POST` | `/runs` | Create a manual comparison run for local testing. |
-| `POST` | `/runs/{id}/retry` | Requeue a failed or completed run. |
-| `POST` | `/webhooks/github` | Receive signed GitHub pull-request events. |
-
-`result` remains `null` while a run is pending or running. Completed results
-have the following shape:
-
-```json
-{
-  "findings": [
-    {
-      "case": "omit_discount",
-      "kind": "regression",
-      "request": {
-        "method": "POST",
-        "path": "/items",
-        "json": {
-          "name": "example",
-          "price": 1.0
-        }
-      },
-      "base_response": {
-        "status_code": 201,
-        "body": {
-          "discount": 0.0
-        }
-      },
-      "pr_response": {
-        "status_code": 422,
-        "body": {
-          "detail": "Field required"
-        }
-      }
-    }
-  ]
-}
-```
-
-## GitHub App setup
-
-The GitHub App integration handles repository events, authenticated repository
-checkouts, and Check Runs. Its user authorization flow also signs users into
-the dashboard and discovers the app installations they can access.
-
-<details>
-<summary><strong>Configure the repository GitHub App</strong></summary>
-
-1. Create a GitHub App from your account or organization settings.
-2. Set its webhook URL to the publicly reachable
-   `https://your-api.example.com/webhooks/github`.
-3. Generate a webhook secret.
-4. Grant these repository permissions:
-   - **Contents:** Read-only
-   - **Pull requests:** Read-only
-   - **Checks:** Read and write
-   - **Metadata:** Read-only
-5. Subscribe to the **Pull request** event.
-6. Generate a private key and install the app on a test repository.
-7. Configure the environment variables below before starting the API and
-   worker.
-
-For private repositories, an owner or organization administrator must include
-the repository when installing or updating the app. The worker creates a
-short-lived installation token and uses it only to fetch the exact base and
-pull-request revisions. The dashboard repository settings page identifies
-public and private repositories separately.
-
-</details>
-
-### Environment variables
-
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `DATABASE_URL` | Production | PostgreSQL connection string. A local default is provided. |
-| `GITHUB_APP_ID` | GitHub integration | Numeric ID of the repository GitHub App. |
-| `GITHUB_PRIVATE_KEY` | GitHub integration | Full PEM private key used to create installation tokens. |
-| `GITHUB_WEBHOOK_SECRET` | GitHub integration | Secret used to validate webhook signatures. |
-| `GITHUB_OAUTH_CLIENT_ID` | Dashboard login | Client ID for the GitHub OAuth App. |
-| `GITHUB_OAUTH_CLIENT_SECRET` | Dashboard login | Client secret for the GitHub OAuth App. |
-| `GITHUB_OAUTH_CALLBACK_URL` | Dashboard login | Public backend OAuth callback URL. |
-| `FRONTEND_URL` | Hosted backend | Public frontend URL used after login and logout. |
-| `ALLOWED_ORIGINS` | Optional backend | Comma-separated additional trusted frontend origins. |
-| `OLLAMA_URL` | Optional AI | Ollama-compatible API base URL. |
-| `OLLAMA_MODEL` | Optional AI | Model used to enrich generated cases and explanations. |
-| `NEXT_PUBLIC_DELTA_CODE_API_URL` | Hosted frontend | Public base URL of the Delta Code API. |
-
-Example local configuration:
-
-```bash
-export GITHUB_APP_ID="..."
-export GITHUB_PRIVATE_KEY="$(cat path/to/delta-code.private-key.pem)"
-export GITHUB_WEBHOOK_SECRET="..."
-```
-
-Never commit private keys, webhook secrets, or production database
-credentials.
-
-## Product boundaries and security
-
-The GitHub App handles repository webhooks and Check Runs. A separate GitHub
-OAuth App signs users into the dashboard. Run reads and retries are restricted
-to repositories returned by the signed-in user's matching GitHub App
-installations. Production credentials must remain in the hosting platforms'
-secret stores, and the authenticated API should only be called from an allowed
-frontend origin.
-
-The current MVP starts checked-out pull-request code directly inside the worker
-process environment. Treat installations as trusted-development use only until
-repository execution is isolated from worker credentials, networking, and the
-host filesystem. Private checkout support does not by itself provide that
-runtime sandbox.
-
-## Roadmap
-
-- [x] Deterministic OpenAPI diffing
-- [x] Targeted edge-case generation
-- [x] Base-versus-PR execution
-- [x] GitHub webhooks and Check Runs
-- [x] PostgreSQL-backed job queue
-- [x] Failure state and run retries
-- [x] Dashboard experience
-- [x] Production backend deployment
-- [x] GitHub OAuth and secure sessions
-- [x] Repository-level dashboard authorization
-- [x] Hosted frontend-to-API integration
-- [x] Optional LLM-assisted case generation and explanations
-- [x] Delta Code brand migration and light/dark product shell
-- [x] Overview, repositories, integrations, and account experiences
-- [ ] API pagination and deeper operational monitoring
-- [ ] Sandboxed execution for untrusted pull-request code
-
-## Brand assets
-
-<p align="center">
-  <img src="docs/assets/brand/delta-code-badge.png" alt="Delta Code dark badge" width="260">
-  &nbsp;&nbsp;&nbsp;
-  <img src="docs/assets/brand/delta-code-mark.png" alt="Delta Code standalone mark" width="180">
-</p>
-
-The full product brief is available in
-[api-verifier-spec.md](api-verifier-spec.md), and the dashboard API handoff is
-documented in [frontend-handoff.md](frontend-handoff.md).
+The development runbook keeps contributor setup and testing commands separate
+from this product overview.
 
 ---
 
