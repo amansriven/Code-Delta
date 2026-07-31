@@ -171,7 +171,7 @@ export const demoDetails: Record<number, RunDetail> = {
 };
 
 export const liveApiUrl =
-  process.env.NEXT_PUBLIC_DELTA_CODE_API_URL?.replace(/\/$/, "") ?? "";
+  process.env.NEXT_PUBLIC_CODEDELTA_API_URL?.replace(/\/$/, "") ?? "";
 
 export async function fetchRuns(signal?: AbortSignal): Promise<RunSummary[]> {
   const response = await fetch(`${liveApiUrl}/runs`, {

@@ -9,7 +9,7 @@ from app.procrastinate_app import procrastinate_app
 from app.tasks import run_comparison
 from app.webhook import router as webhook_router
 
-app = FastAPI(title="Delta Code")
+app = FastAPI(title="CodeDelta")
 app.include_router(webhook_router)
 app.include_router(oauth_router)
 

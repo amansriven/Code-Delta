@@ -1,15 +1,15 @@
-# Delta Code Frontend Implementation Plan
+# CodeΔ Frontend Implementation Plan
 
 ## 1. Product objective
 
-Build a calm, polished dashboard that makes Delta Code's core value immediately
+Build a calm, polished dashboard that makes CodeΔ's core value immediately
 clear: it reports reproduced API behavior changes, not speculative code-review
 advice.
 
 The frontend must make it easy to:
 
 1. Understand the product before signing in.
-2. Connect Delta Code to GitHub.
+2. Connect CodeΔ to GitHub.
 3. See recent pull-request verification runs.
 4. Distinguish confirmed regressions from other status-code changes.
 5. Inspect the exact request and compare base and PR responses.
@@ -49,8 +49,8 @@ repository-level authorization.
 
 ### Wordmark
 
-- Display name: `Delta Code`
-- Accessible name: `Delta Code`
+- Display name: `CodeΔ`
+- Accessible name: `Code Delta`
 - Treatment: neutral `Code` wordmark with the `Δ` in the product accent color
 - The wordmark should be rendered as text/CSS so it stays crisp and accessible
 - The delta may sit inside a subtle outlined container when used as an app icon
@@ -83,7 +83,7 @@ repository-level authorization.
 
 Public landing page:
 
-- Delta Code value proposition
+- CodeΔ value proposition
 - Short explanation of base-versus-PR verification
 - Interactive-looking evidence preview using realistic product data
 - “Continue with GitHub” primary action
@@ -221,7 +221,7 @@ access. Both must be checked server-side before returning run data.
 - Semantic landmarks and headings
 - Visible keyboard focus
 - Skip-to-content link
-- Accessible names for the Delta Code wordmark and icon-only controls
+- Accessible names for the CodeΔ wordmark and icon-only controls
 - Status meaning communicated with text/icons as well as color
 - Sufficient contrast for text and controls
 - Reduced-motion support
@@ -280,7 +280,7 @@ Every data surface will account for:
 The milestone is complete when:
 
 - All planned routes render and navigate correctly.
-- The product consistently uses the `Delta Code` identity.
+- The product consistently uses the `CodeΔ` identity.
 - Runs are scannable and findings are technically clear.
 - Base and PR responses are easy to compare on desktop and mobile.
 - Demo mode is clearly labeled.

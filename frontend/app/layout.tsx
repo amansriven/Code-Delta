@@ -14,12 +14,12 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     metadataBase: new URL(origin),
     title: {
-      default: "Delta Code — Ship API changes without the guesswork",
-      template: "%s · Delta Code",
+      default: "CodeΔ — Ship API changes without the guesswork",
+      template: "%s · CodeΔ",
     },
     description:
       "Evidence-first API verification that shows exactly how pull requests change real behavior.",
-    applicationName: "Delta Code",
+    applicationName: "Code Delta",
     keywords: [
       "API regression testing",
       "GitHub pull requests",
@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
     ],
     openGraph: {
       type: "website",
-      title: "Delta Code — Ship API changes without the guesswork.",
+      title: "CodeΔ — Ship API changes without the guesswork.",
       description:
         "Run targeted requests against both branches and review only the behavior that actually changed.",
       images: [
@@ -36,13 +36,13 @@ export async function generateMetadata(): Promise<Metadata> {
           url: `${origin}/og-v2.png`,
           width: 1731,
           height: 909,
-          alt: "Delta Code — Ship API changes without the guesswork.",
+          alt: "Code Delta — Ship API changes without the guesswork.",
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: "Delta Code — Ship API changes without the guesswork.",
+      title: "CodeΔ — Ship API changes without the guesswork.",
       description:
         "Evidence-first API verification for modern development teams.",
       images: [`${origin}/og-v2.png`],
@@ -56,7 +56,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" data-theme="light" suppressHydrationWarning>
+    <html lang="en">
       <body>
         <a className="skip-link" href="#main-content">
           Skip to content

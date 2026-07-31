@@ -78,7 +78,7 @@ def post_check_run(
             "Accept": "application/vnd.github+json",
         },
         json={
-            "name": "Delta Code API Verifier",
+            "name": "CodeDelta API Verifier",
             "head_sha": head_sha,
             "status": "completed",
             "conclusion": conclusion,

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/brand/codedelta-hero.png" alt="Delta Code — Your API changed. Know exactly how." width="900">
+  <img src="docs/assets/brand/codedelta-hero.png" alt="Code Delta — Your API changed. Know exactly how." width="900">
 </p>
 
 <p align="center">
@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  Delta Code generates targeted edge-case requests, runs them against both sides of
+  CodeΔ generates targeted edge-case requests, runs them against both sides of
   a pull request, and reports only the behavior that actually changed.
 </p>
 
@@ -22,13 +22,13 @@
 ---
 ## Live preview
 
-Delta Code is available at:
+CodeΔ is available at:
 
-**[Open the Delta Code dashboard](https://codedelta-frontend.amansriven757.workers.dev)**
+**[Open the CodeΔ dashboard](https://codedelta-frontend.amansriven757.workers.dev)**
 
-> **Work in progress:** Delta Code is under active development. Some features and interfaces may change. A custom production domain will be added in the future.
+> **Work in progress:** CodeΔ is under active development. Some features and interfaces may change. A custom production domain will be added in the future.
 
-## Why Delta Code?
+## Why CodeΔ?
 
 API pull requests can look harmless in a code diff while silently changing
 runtime behavior:
@@ -38,7 +38,7 @@ runtime behavior:
 - a valid payload starts returning `422`;
 - an edge case that worked on `main` now produces a server error.
 
-Traditional review tools can suggest that something *might* be wrong. Delta Code
+Traditional review tools can suggest that something *might* be wrong. CodeΔ
 tests the change and shows what was observed:
 
 ```text
@@ -59,7 +59,7 @@ That distinction is the product:
 
 No speculative verdict. No pre-existing failures. Just reproducible evidence.
 
-## What Delta Code does
+## What CodeΔ does
 
 1. Receives a pull-request event from GitHub.
 2. Fetches the base and head revisions.
@@ -96,7 +96,7 @@ flowchart LR
     HEAD --> COMPARE
     COMPARE --> RESULT["Reproduced findings"]
     RESULT --> CHECK["GitHub Check Run"]
-    RESULT --> UI["Delta Code dashboard"]
+    RESULT --> UI["CodeΔ dashboard"]
 ```
 
 The job queue is backed by PostgreSQL through
@@ -123,7 +123,7 @@ and return while a separate worker performs the comparison.
 
 ## Supported repositories
 
-Delta Code deliberately keeps its first version narrow. A target repository should:
+CodeΔ deliberately keeps its first version narrow. A target repository should:
 
 - use Python and FastAPI;
 - expose a working `/openapi.json`;
@@ -150,7 +150,7 @@ CodeDelta/
 │   ├── github_client.py     # GitHub authentication and Check Runs
 │   └── db.py                # PostgreSQL schema and connection
 ├── demo_apps/               # Base app plus intentionally broken variants
-├── frontend/                # Delta Code landing page and dashboard
+├── frontend/                # CodeΔ landing page and dashboard
 ├── docs/assets/brand/       # Repository-safe brand artwork
 ├── tests/                   # Unit and end-to-end engine tests
 ├── api-verifier-spec.md     # Product scope and design rationale
@@ -233,7 +233,7 @@ npm run dev
 ```
 
 Open `http://localhost:3000`. The dashboard uses clearly labeled preview data
-by default. Set `NEXT_PUBLIC_DELTA_CODE_API_URL` when connecting it to a hosted
+by default. Set `NEXT_PUBLIC_CODEDELTA_API_URL` when connecting it to a hosted
 API with the appropriate CORS and authentication configuration.
 
 ## Tests and quality checks
@@ -343,7 +343,7 @@ public and private repositories separately.
 | `FRONTEND_URL` | Hosted backend | Public frontend URL used after login and logout. |
 | `OLLAMA_URL` | Optional AI | Ollama-compatible API base URL. |
 | `OLLAMA_MODEL` | Optional AI | Model used to enrich generated cases and explanations. |
-| `NEXT_PUBLIC_DELTA_CODE_API_URL` | Hosted frontend | Public base URL of the Delta Code API. |
+| `NEXT_PUBLIC_CODEDELTA_API_URL` | Hosted frontend | Public base URL of the CodeΔ API. |
 
 Example local configuration:
 
@@ -390,9 +390,9 @@ runtime sandbox.
 ## Brand assets
 
 <p align="center">
-  <img src="docs/assets/brand/codedelta-badge.png" alt="Delta Code dark badge" width="260">
+  <img src="docs/assets/brand/codedelta-badge.png" alt="Code Delta dark badge" width="260">
   &nbsp;&nbsp;&nbsp;
-  <img src="docs/assets/brand/codedelta-mark.png" alt="Delta Code standalone mark" width="180">
+  <img src="docs/assets/brand/codedelta-mark.png" alt="Code Delta standalone mark" width="180">
 </p>
 
 The full product brief is available in
@@ -402,6 +402,6 @@ documented in [frontend-handoff.md](frontend-handoff.md).
 ---
 
 <p align="center">
-  <strong>Delta Code</strong><br>
+  <strong>CodeΔ</strong><br>
   Evidence, not speculation.
 </p>

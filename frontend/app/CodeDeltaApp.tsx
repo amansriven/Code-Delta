@@ -23,115 +23,15 @@ import {
   signOut,
 } from "./lib/data";
 
-const PRODUCT_NAME = "Delta Code";
+const PRODUCT_NAME = "Code Delta";
 const GITHUB_INSTALL_URL = "https://github.com/apps/codedeltaapp/installations/new";
-type DashboardSection = "overview" | "runs" | "repositories" | "integrations" | "settings";
-type ThemePreference = "light" | "dark";
-
-const dashboardNavigation: Array<{
-  section: DashboardSection;
-  label: string;
-  href: string;
-  icon: string;
-  description: string;
-}> = [
-  {
-    section: "overview",
-    label: "Overview",
-    href: "/overview",
-    icon: "◇",
-    description: "Workspace health and recent activity",
-  },
-  {
-    section: "runs",
-    label: "Runs",
-    href: "/runs",
-    icon: "≋",
-    description: "API verification history",
-  },
-  {
-    section: "repositories",
-    label: "Repositories",
-    href: "/repositories",
-    icon: "⌂",
-    description: "GitHub App repository access",
-  },
-  {
-    section: "integrations",
-    label: "Integrations",
-    href: "/settings/integrations",
-    icon: "⌘",
-    description: "GitHub identity and permissions",
-  },
-  {
-    section: "settings",
-    label: "Settings",
-    href: "/settings/account",
-    icon: "◎",
-    description: "Account and appearance",
-  },
-];
-
-function applyTheme(theme: ThemePreference) {
-  document.documentElement.dataset.theme = theme;
-  document.documentElement.style.colorScheme = theme;
-  window.localStorage.setItem("delta-code-theme", theme);
-}
-
-function useThemePreference() {
-  const [theme, setTheme] = useState<ThemePreference>("light");
-
-  useEffect(() => {
-    const stored = window.localStorage.getItem("delta-code-theme");
-    const initial = stored === "dark" ? "dark" : "light";
-    setTheme(initial);
-    applyTheme(initial);
-  }, []);
-
-  const chooseTheme = (nextTheme: ThemePreference) => {
-    setTheme(nextTheme);
-    applyTheme(nextTheme);
-  };
-
-  return { theme, chooseTheme };
-}
 
 function Wordmark({ compact = false }: { compact?: boolean }) {
   return (
     <a className={`wordmark ${compact ? "wordmark-compact" : ""}`} href="/" aria-label={PRODUCT_NAME}>
-      <span className="delta-mark" aria-hidden="true">
-        <i />
-      </span>
-      <span className="wordmark-name">Delta Code</span>
+      <span className="wordmark-code">Code</span>
+      <span className="wordmark-delta">Δ</span>
     </a>
-  );
-}
-
-function ThemeToggle({ compact = false }: { compact?: boolean }) {
-  const { theme, chooseTheme } = useThemePreference();
-  return (
-    <div className={`theme-toggle ${compact ? "theme-toggle-compact" : ""}`} aria-label="Color theme">
-      <button
-        type="button"
-        className={theme === "light" ? "active" : ""}
-        aria-label="Use light theme"
-        aria-pressed={theme === "light"}
-        onClick={() => chooseTheme("light")}
-      >
-        <span aria-hidden="true">☼</span>
-        {!compact && "Light"}
-      </button>
-      <button
-        type="button"
-        className={theme === "dark" ? "active" : ""}
-        aria-label="Use dark theme"
-        aria-pressed={theme === "dark"}
-        onClick={() => chooseTheme("dark")}
-      >
-        <span aria-hidden="true">☾</span>
-        {!compact && "Dark"}
-      </button>
-    </div>
   );
 }
 
@@ -164,7 +64,6 @@ function PublicHeader() {
         <a className="nav-signin" href={githubLoginUrl}>
           Sign in
         </a>
-        <ThemeToggle compact />
         <a className="button button-primary button-small" href={githubLoginUrl}>
           Get started <span aria-hidden="true">↗</span>
         </a>
@@ -198,19 +97,16 @@ function PublicFooter() {
         </div>
       </div>
       <div className="footer-bottom">
-        <span>© 2026 Delta Code</span>
+        <span>© 2026 Code Delta</span>
         <span className="system-status"><i /> All systems operational</span>
       </div>
     </footer>
   );
 }
 
-function AppHeader({ active }: { active: DashboardSection }) {
+function AppHeader({ active }: { active: "runs" | "settings" }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [commandOpen, setCommandOpen] = useState(false);
-  const [commandQuery, setCommandQuery] = useState("");
 
   useEffect(() => {
     const controller = new AbortController();
@@ -218,105 +114,50 @@ function AppHeader({ active }: { active: DashboardSection }) {
     return () => controller.abort();
   }, []);
 
-  useEffect(() => {
-    const handleShortcut = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
-        event.preventDefault();
-        setCommandOpen((open) => !open);
-      }
-      if (event.key === "Escape") {
-        setCommandOpen(false);
-        setMenuOpen(false);
-        setMobileOpen(false);
-      }
-    };
-    window.addEventListener("keydown", handleShortcut);
-    return () => window.removeEventListener("keydown", handleShortcut);
-  }, []);
-
-  const initials = user?.login ? user.login.slice(0, 2).toUpperCase() : "DC";
-  const visibleCommands = dashboardNavigation.filter((item) => {
-    const normalized = commandQuery.trim().toLowerCase();
-    return (
-      !normalized ||
-      item.label.toLowerCase().includes(normalized) ||
-      item.description.toLowerCase().includes(normalized)
-    );
-  });
+  const initials = user?.login ? user.login.slice(0, 2).toUpperCase() : "AS";
 
   return (
-    <>
-      <aside className={`app-sidebar ${mobileOpen ? "mobile-open" : ""}`}>
-        <div className="sidebar-brand">
-          <Wordmark />
-          <button
-            type="button"
-            className="mobile-sidebar-close"
-            aria-label="Close navigation"
-            onClick={() => setMobileOpen(false)}
+    <header className="app-header">
+      <div className="app-header-inner">
+        <Wordmark />
+        <nav className="app-nav" aria-label="Dashboard navigation">
+          <a className={active === "runs" ? "active" : ""} href="/runs">
+            Runs
+          </a>
+          <a
+            className={active === "settings" ? "active" : ""}
+            href="/settings/integrations"
           >
-            ×
-          </button>
-        </div>
-        <button
-          type="button"
-          className="command-trigger"
-          onClick={() => setCommandOpen(true)}
-        >
-          <span aria-hidden="true">⌕</span>
-          <span>Search workspace</span>
-          <kbd>⌘K</kbd>
-        </button>
-        <nav className="sidebar-nav" aria-label="Dashboard navigation">
-          <span>Workspace</span>
-          {dashboardNavigation.map((item) => (
-            <a
-              key={item.section}
-              className={active === item.section ? "active" : ""}
-              href={item.href}
-              aria-current={active === item.section ? "page" : undefined}
-            >
-              <i aria-hidden="true">{item.icon}</i>
-              <span>{item.label}</span>
-            </a>
-          ))}
+            Integrations
+          </a>
         </nav>
-        <div className="sidebar-footer">
-          <span className="api-indicator">
-            <i />
-            {liveApiUrl ? "API connected" : "Preview workspace"}
-          </span>
-          <ThemeToggle />
-          <div className="sidebar-account">
+        <div className="account-cluster">
+          {!liveApiUrl && <DemoPill />}
+          <div className="account-menu">
             <button
               type="button"
-              className="sidebar-account-button"
+              className="avatar"
               aria-label={user ? `Signed in as ${user.login}` : "Account menu"}
               aria-haspopup="true"
               aria-expanded={menuOpen}
               onClick={() => setMenuOpen((open) => !open)}
             >
-              <span className="avatar">
-                {user?.avatar_url ? (
-                  <Image src={user.avatar_url} alt="" width={34} height={34} />
-                ) : (
-                  initials
-                )}
-              </span>
-              <span>
-                <strong>{user?.login || "Preview account"}</strong>
-                <small>{user ? `${user.accessible_repos.length} repositories` : "Explore Delta Code"}</small>
-              </span>
-              <i aria-hidden="true">⌄</i>
+              {user?.avatar_url ? (
+                <Image src={user.avatar_url} alt="" width={32} height={32} />
+              ) : (
+                initials
+              )}
             </button>
             {menuOpen && (
-              <div className="account-dropdown sidebar-account-dropdown" role="menu">
+              <div className="account-dropdown" role="menu">
                 <span className="account-dropdown-name">
-                  {user ? `@${user.login}` : "Not signed in"}
+                  {user ? user.login : "Not signed in"}
                 </span>
                 {user ? (
                   <>
-                    <a role="menuitem" href="/settings/account">Account settings</a>
+                    <a role="menuitem" href="/settings/account">
+                      Account settings
+                    </a>
                     <button
                       type="button"
                       role="menuitem"
@@ -330,87 +171,16 @@ function AppHeader({ active }: { active: DashboardSection }) {
                     </button>
                   </>
                 ) : (
-                  <a role="menuitem" href={githubLoginUrl}>Sign in with GitHub</a>
+                  <a role="menuitem" href={githubLoginUrl}>
+                    Sign in with GitHub
+                  </a>
                 )}
               </div>
             )}
           </div>
         </div>
-      </aside>
-      {mobileOpen && (
-        <button
-          type="button"
-          className="sidebar-scrim"
-          aria-label="Close navigation"
-          onClick={() => setMobileOpen(false)}
-        />
-      )}
-      <header className="app-header">
-        <div className="app-header-inner">
-          <button
-            type="button"
-            className="mobile-nav-trigger"
-            aria-label="Open navigation"
-            onClick={() => setMobileOpen(true)}
-          >
-            <span />
-            <span />
-          </button>
-          <div className="app-header-context">
-            <span>Delta Code</span>
-            <i aria-hidden="true">/</i>
-            <strong>{dashboardNavigation.find((item) => item.section === active)?.label}</strong>
-          </div>
-          <div className="account-cluster">
-            {!liveApiUrl && <DemoPill />}
-            <a className="topbar-avatar avatar" href="/settings/account" aria-label="Account settings">
-              {user?.avatar_url ? (
-                <Image src={user.avatar_url} alt="" width={32} height={32} />
-              ) : (
-                initials
-              )}
-            </a>
-          </div>
-        </div>
-      </header>
-      {commandOpen && (
-        <div
-          className="command-palette-backdrop"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.currentTarget === event.target) setCommandOpen(false);
-          }}
-        >
-          <section className="command-palette" role="dialog" aria-modal="true" aria-label="Search Delta Code">
-            <label>
-              <span aria-hidden="true">⌕</span>
-              <input
-                autoFocus
-                type="search"
-                value={commandQuery}
-                placeholder="Where do you want to go?"
-                onChange={(event) => setCommandQuery(event.target.value)}
-              />
-              <kbd>esc</kbd>
-            </label>
-            <div className="command-results">
-              <span>Navigate</span>
-              {visibleCommands.map((item) => (
-                <a key={item.section} href={item.href}>
-                  <i aria-hidden="true">{item.icon}</i>
-                  <span>
-                    <strong>{item.label}</strong>
-                    <small>{item.description}</small>
-                  </span>
-                  <b aria-hidden="true">↗</b>
-                </a>
-              ))}
-              {visibleCommands.length === 0 && <p>No matching destination.</p>}
-            </div>
-          </section>
-        </div>
-      )}
-    </>
+      </div>
+    </header>
   );
 }
 
@@ -455,60 +225,6 @@ function formatRelativeDate(value: string) {
 function repoParts(repo: string) {
   const [owner, name] = repo.split("/");
   return { owner: owner || "repository", name: name || repo };
-}
-
-const previewUser: CurrentUser = {
-  login: "preview-user",
-  avatar_url: null,
-  accessible_repos: [...new Set(demoRuns.map((run) => run.repo))],
-  repositories: [...new Set(demoRuns.map((run) => run.repo))].map((full_name, index) => ({
-    full_name,
-    private: index !== 2,
-    visibility: index === 2 ? "public" : "private",
-  })),
-};
-
-function repositoriesForUser(user: CurrentUser | null): RepositoryAccess[] {
-  if (!user) return [];
-  if (user.repositories?.length) return user.repositories;
-  return user.accessible_repos.map((full_name) => ({
-    full_name,
-    private: null,
-    visibility: "unknown",
-  }));
-}
-
-function useWorkspaceData() {
-  const [runs, setRuns] = useState<RunSummary[]>(liveApiUrl ? [] : demoRuns);
-  const [user, setUser] = useState<CurrentUser | null>(liveApiUrl ? null : previewUser);
-  const [loading, setLoading] = useState(Boolean(liveApiUrl));
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    if (!liveApiUrl) return;
-    const controller = new AbortController();
-    Promise.all([fetchRuns(controller.signal), fetchMe(controller.signal)])
-      .then(([runData, identity]) => {
-        setRuns(runData);
-        setUser(identity);
-        setError(identity ? "" : "Sign in with GitHub to view this workspace.");
-      })
-      .catch((reason: Error) => {
-        if (reason.name !== "AbortError") {
-          setError(reason.message || "The workspace could not be loaded.");
-        }
-      })
-      .finally(() => setLoading(false));
-    return () => controller.abort();
-  }, []);
-
-  return {
-    runs,
-    user,
-    repositories: repositoriesForUser(user),
-    loading,
-    error,
-  };
 }
 
 function ExperienceShell({ children }: { children: React.ReactNode }) {
@@ -571,38 +287,6 @@ function InteractiveLandingShell({ children }: { children: React.ReactNode }) {
       <div className="aurora aurora-a" aria-hidden="true" />
       <div className="aurora aurora-b" aria-hidden="true" />
       <div className="mesh-grid" aria-hidden="true" />
-      <div className="api-flow-field" aria-hidden="true">
-        <svg viewBox="0 0 1440 780" preserveAspectRatio="xMidYMid slice">
-          <defs>
-            <linearGradient id="delta-flow-primary" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stopColor="currentColor" stopOpacity="0" />
-              <stop offset=".45" stopColor="currentColor" stopOpacity=".72" />
-              <stop offset="1" stopColor="currentColor" stopOpacity=".08" />
-            </linearGradient>
-            <linearGradient id="delta-flow-change" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stopColor="#22a9e8" stopOpacity=".16" />
-              <stop offset=".6" stopColor="#1769ff" stopOpacity=".68" />
-              <stop offset="1" stopColor="#e34962" stopOpacity=".22" />
-            </linearGradient>
-          </defs>
-          <path className="flow-path flow-path-muted" d="M-80 180 C180 180 242 124 444 124 S720 210 916 174 1190 112 1520 112" />
-          <path className="flow-path flow-path-muted" d="M-40 620 C210 620 294 532 482 532 S780 652 1010 594 1238 500 1510 526" />
-          <path className="flow-path flow-path-base" d="M310 388 C486 388 534 310 686 310 S876 244 1070 244 1274 296 1490 270" />
-          <path className="flow-path flow-path-head" d="M310 388 C486 388 534 462 686 462 S882 536 1072 536 1274 482 1490 516" />
-          <path className="flow-path flow-path-spine" d="M-50 388 C86 388 180 388 310 388" />
-          <circle className="flow-hub" cx="310" cy="388" r="7" />
-          <circle className="flow-node node-base" cx="686" cy="310" r="5" />
-          <circle className="flow-node node-head" cx="686" cy="462" r="5" />
-          <circle className="flow-node node-change" cx="1072" cy="536" r="6" />
-        </svg>
-        <span className="flow-packet flow-packet-one" />
-        <span className="flow-packet flow-packet-two" />
-        <span className="flow-packet flow-packet-three" />
-        <span className="flow-chip flow-chip-request"><b>GET</b> /v1/items</span>
-        <span className="flow-chip flow-chip-base"><i /> base · 200</span>
-        <span className="flow-chip flow-chip-head"><i /> head · 422</span>
-        <span className="flow-difference">behavior changed</span>
-      </div>
       <div className="constellation" aria-hidden="true">
         <i /><i /><i /><i /><i /><i />
         <span /><span /><span />
@@ -741,7 +425,7 @@ function LandingPage() {
               <em>without the guesswork.</em>
             </h1>
             <p>
-              Delta Code turns every pull request into a real behavioral comparison.
+              CodeΔ turns every pull request into a real behavioral comparison.
               We generate targeted requests, run both branches, and surface only
               the API changes your team needs to review.
             </p>
@@ -789,7 +473,7 @@ function LandingPage() {
             <span className="workflow-icon">⌁</span>
             <small>01 · Detect</small>
             <h3>Understand the changed surface</h3>
-            <p>Delta Code reads both OpenAPI specifications and isolates endpoints, parameters, and fields touched by the PR.</p>
+            <p>CodeΔ reads both OpenAPI specifications and isolates endpoints, parameters, and fields touched by the PR.</p>
           </article>
           <span className="rail-arrow">→</span>
           <article>
@@ -855,7 +539,7 @@ function LandingPage() {
         <div className="cta-orb" aria-hidden="true" />
         <span className="section-kicker">Start with your next pull request</span>
         <h2>Make every API change explain itself.</h2>
-        <p>Connect GitHub, select a repository, and let Delta Code turn hidden behavior changes into reviewable evidence.</p>
+        <p>Connect GitHub, select a repository, and let CodeΔ turn hidden behavior changes into reviewable evidence.</p>
         <div>
           <a className="button button-primary button-large" href={githubLoginUrl}>Connect GitHub <span>→</span></a>
           <a className="button button-quiet button-large" href="/docs">Read the docs</a>
@@ -894,7 +578,7 @@ function ProductPage() {
       <PublicPageHero
         kicker="The verification platform"
         title="API regression testing your whole team can trust."
-        description="Delta Code connects contract changes to runtime evidence, giving reviewers a fast, shared understanding of what a pull request changes for real clients."
+        description="CodeΔ connects contract changes to runtime evidence, giving reviewers a fast, shared understanding of what a pull request changes for real clients."
       >
         <div className="subpage-actions">
           <a className="button button-primary button-large" href={githubLoginUrl}>Connect a repository →</a>
@@ -921,7 +605,7 @@ function ProductPage() {
           ["◫", "Request provenance", "Stable case IDs and rationales make every generated request traceable."],
           ["Δ", "Behavior classification", "Separates true regressions from other status-code changes."],
           ["↻", "Failure recovery", "Clear errors and one-click retries keep transient failures actionable."],
-          ["◎", "Repository visibility", "See every repository granted to the Delta Code GitHub App."],
+          ["◎", "Repository visibility", "See every repository granted to the CodeΔ GitHub App."],
           ["✦", "AI enrichment", "Optional semantic cases and explanations layer onto deterministic evidence."],
         ].map(([icon, title, copy]) => (
           <article key={title}>
@@ -939,14 +623,14 @@ function WorkflowPage() {
     <main className="public-page light-public-page">
       <PublicHeader />
       <PublicPageHero
-        kicker="How Delta Code works"
+        kicker="How Code Delta works"
         title="A rigorous test loop, triggered by a pull request."
-        description="Delta Code combines contract analysis, isolated execution, and evidence-first reporting in one repeatable workflow."
+        description="CodeΔ combines contract analysis, isolated execution, and evidence-first reporting in one repeatable workflow."
       />
       <section className="timeline-section">
         {[
           ["01", "A pull request changes your API", "The GitHub App receives the event and creates an asynchronous verification run.", "pull_request.opened"],
-          ["02", "Delta Code maps the changed surface", "Base and head OpenAPI specifications are compared to identify testable request changes.", "openapi.diff()"],
+          ["02", "CodeΔ maps the changed surface", "Base and head OpenAPI specifications are compared to identify testable request changes.", "openapi.diff()"],
           ["03", "Focused cases are generated", "Rules cover contract boundaries; optional AI adds semantic cases based on field meaning.", "cases.generate()"],
           ["04", "Both branches are exercised", "The same request runs against isolated base and pull-request applications.", "base ⇄ head"],
           ["05", "Only differences survive", "Equivalent behavior and pre-existing failures are suppressed to keep the result focused.", "compare.responses()"],
@@ -962,7 +646,7 @@ function WorkflowPage() {
       <section className="principle-callout">
         <span>Our core principle</span>
         <blockquote>“AI can suggest what to test. Only execution can prove what changed.”</blockquote>
-        <p>This boundary keeps Delta Code useful in serious engineering workflows: generated ideas remain clearly separate from reproduced evidence.</p>
+        <p>This boundary keeps CodeΔ useful in serious engineering workflows: generated ideas remain clearly separate from reproduced evidence.</p>
       </section>
       <PublicFooter />
     </main>
@@ -983,9 +667,9 @@ function DocsPage() {
           <a href="#ai">AI assistance</a>
         </aside>
         <article className="docs-content">
-          <span className="section-kicker">Delta Code docs</span>
+          <span className="section-kicker">Code Delta docs</span>
           <h1 id="quickstart">Start verifying API behavior.</h1>
-          <p className="docs-lede">Get the complete Delta Code stack running locally, or connect the hosted dashboard to a GitHub App installation.</p>
+          <p className="docs-lede">Get the complete CodeΔ stack running locally, or connect the hosted dashboard to a GitHub App installation.</p>
           <div className="docs-note"><b>Prerequisites</b><span>Python 3.12+, Node.js 22.13+, Docker, Git, and Make.</span></div>
           <h2>Local quickstart</h2>
           <p>Install dependencies and start PostgreSQL:</p>
@@ -1011,7 +695,7 @@ function DocsPage() {
             <span><b>POST</b><code>/runs/&#123;id&#125;/retry</code><small>Requeue a verification run</small></span>
           </div>
           <h2 id="ai">AI assistance</h2>
-          <p>Set <code>OLLAMA_URL</code> and <code>OLLAMA_MODEL</code> to enable semantic case suggestions and evidence-grounded explanations. Delta Code continues deterministically when the model is unavailable.</p>
+          <p>Set <code>OLLAMA_URL</code> and <code>OLLAMA_MODEL</code> to enable semantic case suggestions and evidence-grounded explanations. CodeΔ continues deterministically when the model is unavailable.</p>
         </article>
       </div>
       <PublicFooter />
@@ -1026,13 +710,13 @@ function SecurityPage() {
       <PublicPageHero
         kicker="Security by design"
         title="Repository access stays explicit. Evidence stays scoped."
-        description="Delta Code uses separate GitHub App and OAuth responsibilities so repository automation and dashboard identity never blur together."
+        description="CodeΔ uses separate GitHub App and OAuth responsibilities so repository automation and dashboard identity never blur together."
       />
       <section className="security-grid">
         <article className="security-primary">
           <span className="card-icon">◈</span>
           <h2>Least-privilege repository access</h2>
-          <p>Delta Code can only receive events and read code for repositories explicitly selected during GitHub App installation.</p>
+          <p>CodeΔ can only receive events and read code for repositories explicitly selected during GitHub App installation.</p>
         </article>
         <article><span>01</span><h3>Signed webhooks</h3><p>Every incoming GitHub event is verified before processing.</p></article>
         <article><span>02</span><h3>Server-side sessions</h3><p>Dashboard access uses secure, HTTP-only session cookies.</p></article>
@@ -1066,10 +750,10 @@ function LoginPage() {
           GH
         </div>
         <span className="section-kicker">Developer access</span>
-        <h1>Continue to Delta Code</h1>
+        <h1>Continue to CodeΔ</h1>
         <p className="auth-intro">
           Sign in with GitHub to view verification runs for repositories where
-          Delta Code is installed.
+          CodeΔ is installed.
         </p>
         <div className="preview-notice">
           <span aria-hidden="true">i</span>
@@ -1090,7 +774,7 @@ function LoginPage() {
           Enter demo workspace
         </a>
         <p className="auth-fineprint">
-          GitHub identity and repository installation are separate. Delta Code only
+          GitHub identity and repository installation are separate. CodeΔ only
           receives access to repositories you explicitly select.
         </p>
       </section>
@@ -1109,10 +793,10 @@ function OnboardingPage() {
       <section className="onboarding-content">
         <div className="onboarding-copy">
           <span className="section-kicker">Connect a repository</span>
-          <h1>Bring Delta Code into your pull requests.</h1>
+          <h1>Bring CodeΔ into your pull requests.</h1>
           <p>
             Install the GitHub App on the repositories you want verified.
-            Delta Code will run automatically when a pull request opens or updates.
+            CodeΔ will run automatically when a pull request opens or updates.
           </p>
         </div>
         <div className="setup-grid">
@@ -1129,8 +813,8 @@ function OnboardingPage() {
             <span className="step-icon">02</span>
             <div>
               <small>Step 2</small>
-              <h2>Install Delta Code</h2>
-              <p>Choose an account and the repositories Delta Code can access.</p>
+              <h2>Install CodeΔ</h2>
+              <p>Choose an account and the repositories CodeΔ can access.</p>
               <button className="button button-primary" type="button" disabled>
                 GitHub App connection coming next
               </button>
@@ -1182,223 +866,6 @@ function DashboardSummary({ runs }: { runs: RunSummary[] }) {
         <small>queued or executing</small>
       </article>
     </div>
-  );
-}
-
-function WorkspaceMetric({
-  label,
-  value,
-  note,
-  tone = "default",
-  href,
-}: {
-  label: string;
-  value: string | number;
-  note: string;
-  tone?: "default" | "danger" | "running" | "success";
-  href: string;
-}) {
-  return (
-    <a className={`workspace-metric metric-${tone}`} href={href}>
-      <span>{label}</span>
-      <strong>{value}</strong>
-      <small>{note}</small>
-      <i aria-hidden="true" />
-    </a>
-  );
-}
-
-function MiniActivityChart({ runs }: { runs: RunSummary[] }) {
-  const days = Array.from({ length: 7 }, (_, index) => {
-    const date = new Date();
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() - (6 - index));
-    const next = new Date(date);
-    next.setDate(next.getDate() + 1);
-    const count = runs.filter((run) => {
-      const timestamp = new Date(run.created_at).getTime();
-      return timestamp >= date.getTime() && timestamp < next.getTime();
-    }).length;
-    return {
-      label: date.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 1),
-      count,
-    };
-  });
-  const max = Math.max(1, ...days.map((day) => day.count));
-
-  return (
-    <div className="activity-chart" aria-label="Runs during the last seven days">
-      {days.map((day, index) => (
-        <span key={`${day.label}-${index}`}>
-          <i style={{ height: `${Math.max(10, (day.count / max) * 100)}%` }} />
-          <small>{day.label}</small>
-          <b className="sr-only">{day.count} runs</b>
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function OverviewPage() {
-  const { runs, user, repositories, loading, error } = useWorkspaceData();
-  const activeRuns = runs.filter((run) => run.status === "pending" || run.status === "running");
-  const completedRuns = runs.filter((run) => run.status === "done");
-  const regressionRuns = completedRuns.filter((run) => (run.finding_count ?? 0) > 0);
-  const passingRuns = completedRuns.filter((run) => (run.finding_count ?? 0) === 0);
-  const passRate = completedRuns.length
-    ? `${Math.round((passingRuns.length / completedRuns.length) * 100)}%`
-    : "—";
-
-  const repositoryHealth = repositories
-    .map((repository) => {
-      const repositoryRuns = runs.filter((run) => run.repo === repository.full_name);
-      const latest = [...repositoryRuns].sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-      )[0];
-      return { repository, latest, runCount: repositoryRuns.length };
-    })
-    .sort((a, b) => {
-      if (!a.latest) return 1;
-      if (!b.latest) return -1;
-      return new Date(b.latest.created_at).getTime() - new Date(a.latest.created_at).getTime();
-    });
-
-  return (
-    <main className="dashboard-page">
-      <AppHeader active="overview" />
-      <div className="dashboard-content overview-content">
-        <div className="overview-welcome">
-          <div>
-            <span className="section-kicker">Workspace overview</span>
-            <h1>{user ? `Welcome back, ${user.login}` : "Your API change workspace"}</h1>
-            <p>
-              {repositories.length} {repositories.length === 1 ? "repository" : "repositories"} accessible
-              {" · "}
-              {activeRuns.length} {activeRuns.length === 1 ? "run" : "runs"} active
-            </p>
-          </div>
-          <a className="button button-primary" href="/runs">Review runs →</a>
-        </div>
-        {!liveApiUrl && (
-          <div className="demo-banner">
-            <span className="demo-banner-icon" aria-hidden="true">◇</span>
-            <div>
-              <strong>Product preview</strong>
-              <p>Connect the live API to replace this representative workspace with your GitHub data.</p>
-            </div>
-          </div>
-        )}
-        {error && (
-          <div className="error-state overview-error" role="alert">
-            <span aria-hidden="true">!</span>
-            <div>
-              <h2>Workspace unavailable</h2>
-              <p>{error}</p>
-              {error.includes("Sign in") && (
-                <a className="button button-primary" href={githubLoginUrl}>Continue with GitHub</a>
-              )}
-            </div>
-          </div>
-        )}
-        <section className="workspace-metrics" aria-label="Workspace metrics">
-          <WorkspaceMetric
-            label="Accessible repositories"
-            value={loading ? "…" : repositories.length}
-            note="GitHub App access"
-            href="/repositories"
-          />
-          <WorkspaceMetric
-            label="Active runs"
-            value={loading ? "…" : activeRuns.length}
-            note={activeRuns[0]?.repo || "No runs executing"}
-            tone="running"
-            href="/runs"
-          />
-          <WorkspaceMetric
-            label="Runs with changes"
-            value={loading ? "…" : regressionRuns.length}
-            note="In the recent API window"
-            tone={regressionRuns.length ? "danger" : "success"}
-            href="/runs"
-          />
-          <WorkspaceMetric
-            label="Recent pass rate"
-            value={loading ? "…" : passRate}
-            note={`${completedRuns.length} completed runs`}
-            tone="success"
-            href="/runs"
-          />
-        </section>
-        <div className="overview-grid">
-          <section className="overview-panel repository-health-panel">
-            <div className="panel-title-row">
-              <div>
-                <span className="section-kicker">At a glance</span>
-                <h2>Repository health</h2>
-              </div>
-              <a href="/repositories">View all →</a>
-            </div>
-            {loading ? (
-              <div className="loading-state compact-loading" role="status">
-                <span className="loading-spinner" aria-hidden="true" />
-                Loading repository health…
-              </div>
-            ) : repositoryHealth.length ? (
-              <div className="repository-health-list">
-                {repositoryHealth.slice(0, 6).map(({ repository, latest, runCount }) => (
-                  <a
-                    key={repository.full_name}
-                    href={latest ? `/runs/${latest.id}` : "/repositories"}
-                  >
-                    <span className={`health-dot health-${latest?.status || "idle"}`} />
-                    <span>
-                      <strong>{repository.full_name}</strong>
-                      <small>
-                        {latest ? `${formatRelativeDate(latest.created_at)} · ${runCount} recent runs` : "No runs yet"}
-                      </small>
-                    </span>
-                    {latest ? <RunVerdict run={latest} /> : <b>Ready</b>}
-                  </a>
-                ))}
-              </div>
-            ) : (
-              <div className="empty-state compact-empty">
-                <h2>No repositories connected</h2>
-                <p>Choose repositories through the GitHub App installation.</p>
-              </div>
-            )}
-          </section>
-          <section className="overview-panel activity-panel">
-            <div className="panel-title-row">
-              <div>
-                <span className="section-kicker">Past seven days</span>
-                <h2>Run activity</h2>
-              </div>
-              <strong>{runs.length}</strong>
-            </div>
-            <MiniActivityChart runs={runs} />
-            <p>Activity reflects the recent run window returned by the Delta Code API.</p>
-          </section>
-        </div>
-        <section className="runs-panel overview-runs" aria-labelledby="overview-runs-title">
-          <div className="runs-panel-header">
-            <div>
-              <h2 id="overview-runs-title">Recent runs</h2>
-              <span>{Math.min(runs.length, 6)} shown</span>
-            </div>
-            <a className="text-link" href="/runs">View all runs →</a>
-          </div>
-          {loading ? (
-            <div className="loading-state" role="status">
-              <span className="loading-spinner" aria-hidden="true" />
-              Loading recent runs…
-            </div>
-          ) : (
-            <RunsTable runs={runs.slice(0, 6)} />
-          )}
-        </section>
-      </div>
-    </main>
   );
 }
 
@@ -1526,7 +993,7 @@ function RunsPage() {
       .catch((reason: Error) => {
         if (reason.name !== "AbortError") {
           setRuns([]);
-          setError(reason.message || "Delta Code could not reach the runs API. Check the backend connection and try again.");
+          setError(reason.message || "CodeΔ could not reach the runs API. Check the backend connection and try again.");
         }
       })
       .finally(() => setLoading(false));
@@ -1586,7 +1053,7 @@ function RunsPage() {
             </span>
             <div>
               <strong>You’re exploring a product preview.</strong>
-              <p>These runs use representative data shaped exactly like the current Delta Code API.</p>
+              <p>These runs use representative data shaped exactly like the current CodeΔ API.</p>
             </div>
           </div>
         )}
@@ -1823,7 +1290,7 @@ function RunState({ run }: { run: RunDetail }) {
         <span className="section-kicker">{run.status === "pending" ? "Queued" : "Running now"}</span>
         <h2>{run.status === "pending" ? "Waiting for an available worker" : "Comparing both API versions"}</h2>
         <p>
-          Delta Code is generating changed-endpoint cases and running the same
+          CodeΔ is generating changed-endpoint cases and running the same
           requests against the base and PR branches. This page refreshes automatically.
         </p>
       </div>
@@ -2078,348 +1545,6 @@ function RunDetailPage({ runId }: { runId: number }) {
   );
 }
 
-function RepositoryVisibilityBadge({ repository }: { repository: RepositoryAccess }) {
-  const visibility =
-    repository.visibility === "internal"
-      ? "Internal"
-      : repository.private === true
-        ? "Private"
-        : repository.private === false
-          ? "Public"
-          : "Unknown";
-  return (
-    <span
-      className={`repository-visibility ${
-        repository.visibility === "internal"
-          ? "repository-internal"
-          : repository.private === true
-            ? "repository-private"
-            : repository.private === false
-              ? "repository-public"
-              : ""
-      }`}
-    >
-      <i aria-hidden="true">
-        {repository.visibility === "internal" ? "◈" : repository.private ? "⌑" : "○"}
-      </i>
-      {visibility}
-    </span>
-  );
-}
-
-function RepositoriesPage() {
-  const { runs, repositories, loading, error } = useWorkspaceData();
-  const [query, setQuery] = useState("");
-  const [visibility, setVisibility] = useState<"all" | "public" | "private" | "internal">("all");
-  const normalizedQuery = query.trim().toLowerCase();
-  const visibleRepositories = repositories.filter((repository) => {
-    const matchesQuery =
-      !normalizedQuery || repository.full_name.toLowerCase().includes(normalizedQuery);
-    const repositoryVisibility =
-      repository.visibility === "internal"
-        ? "internal"
-        : repository.private === true
-          ? "private"
-          : repository.private === false
-            ? "public"
-            : "all";
-    return matchesQuery && (visibility === "all" || repositoryVisibility === visibility);
-  });
-
-  return (
-    <main className="dashboard-page">
-      <AppHeader active="repositories" />
-      <div className="dashboard-content repositories-content">
-        <div className="page-heading">
-          <div>
-            <span className="section-kicker">GitHub App access</span>
-            <h1>Repositories</h1>
-            <p>See every repository Delta Code can access and its latest verification state.</p>
-          </div>
-          <a
-            className="button button-primary"
-            href={GITHUB_INSTALL_URL}
-            target="_blank"
-            rel="noreferrer"
-          >
-            Choose repositories ↗
-          </a>
-        </div>
-        <aside className="access-explainer">
-          <span aria-hidden="true">⌁</span>
-          <div>
-            <strong>Repository access and verification activity are different.</strong>
-            <p>
-              GitHub controls which repositories appear here. A repository can be accessible
-              before it has a Delta Code run.
-            </p>
-          </div>
-          <a href={githubRepositoryRefreshUrl}>Refresh access</a>
-        </aside>
-        <section className="repository-directory" aria-labelledby="repository-directory-title">
-          <div className="repository-directory-toolbar">
-            <div>
-              <h2 id="repository-directory-title">Repository directory</h2>
-              <span>{visibleRepositories.length} of {repositories.length}</span>
-            </div>
-            <div className="repository-filters">
-              <label className="search-field">
-                <span aria-hidden="true">⌕</span>
-                <span className="sr-only">Search repositories</span>
-                <input
-                  type="search"
-                  value={query}
-                  placeholder="Search repositories"
-                  onChange={(event) => setQuery(event.target.value)}
-                />
-              </label>
-              <div className="visibility-filter" aria-label="Repository visibility">
-                {(["all", "private", "public", "internal"] as const).map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    className={visibility === option ? "active" : ""}
-                    aria-pressed={visibility === option}
-                    onClick={() => setVisibility(option)}
-                  >
-                    {option[0].toUpperCase() + option.slice(1)}
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-          {error ? (
-            <div className="error-state" role="alert">
-              <span aria-hidden="true">!</span>
-              <div>
-                <h2>Repository access unavailable</h2>
-                <p>{error}</p>
-                {error.includes("Sign in") && (
-                  <a className="button button-primary" href={githubLoginUrl}>Continue with GitHub</a>
-                )}
-              </div>
-            </div>
-          ) : loading ? (
-            <div className="loading-state" role="status">
-              <span className="loading-spinner" aria-hidden="true" />
-              Loading repository access…
-            </div>
-          ) : visibleRepositories.length ? (
-            <div className="repository-directory-list">
-              <div className="repository-directory-head" aria-hidden="true">
-                <span>Repository</span>
-                <span>Visibility</span>
-                <span>Latest run</span>
-                <span>Recent runs</span>
-                <span />
-              </div>
-              {visibleRepositories.map((repository) => {
-                const repositoryRuns = runs.filter((run) => run.repo === repository.full_name);
-                const latest = [...repositoryRuns].sort(
-                  (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
-                )[0];
-                const parts = repoParts(repository.full_name);
-                return (
-                  <article key={repository.full_name}>
-                    <div className="repo-cell">
-                      <span className="repo-mark" aria-hidden="true">
-                        {parts.name.slice(0, 2).toUpperCase()}
-                      </span>
-                      <span>
-                        <strong>{parts.name}</strong>
-                        <small>{parts.owner}</small>
-                      </span>
-                    </div>
-                    <RepositoryVisibilityBadge repository={repository} />
-                    <div className="repository-latest-run">
-                      {latest ? (
-                        <>
-                          <RunVerdict run={latest} />
-                          <small>{formatRelativeDate(latest.created_at)}</small>
-                        </>
-                      ) : (
-                        <span className="verdict-muted">No runs yet</span>
-                      )}
-                    </div>
-                    <strong className="repository-run-count">{repositoryRuns.length}</strong>
-                    <a
-                      className="repository-open"
-                      href={latest ? `/runs/${latest.id}` : "/runs"}
-                      aria-label={`View runs for ${repository.full_name}`}
-                    >
-                      →
-                    </a>
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="empty-state">
-              <span className="empty-icon" aria-hidden="true">⌂</span>
-              <h2>No repositories match this view</h2>
-              <p>Clear the search or choose another visibility filter.</p>
-            </div>
-          )}
-        </section>
-      </div>
-    </main>
-  );
-}
-
-function IntegrationsPage() {
-  const { user, repositories, loading, error } = useWorkspaceData();
-  const privateCount = repositories.filter((repository) => repository.private === true).length;
-  const publicCount = repositories.filter((repository) => repository.private === false).length;
-  const internalCount = repositories.filter((repository) => repository.visibility === "internal").length;
-
-  return (
-    <main className="dashboard-page">
-      <AppHeader active="integrations" />
-      <div className="dashboard-content integrations-content">
-        <div className="page-heading">
-          <div>
-            <span className="section-kicker">Connected services</span>
-            <h1>Integrations</h1>
-            <p>Manage the GitHub identity and repository installation used by Delta Code.</p>
-          </div>
-        </div>
-        {error ? (
-          <div className="error-state" role="alert">
-            <span aria-hidden="true">!</span>
-            <div>
-              <h2>GitHub connection unavailable</h2>
-              <p>{error}</p>
-              {error.includes("Sign in") && (
-                <a className="button button-primary" href={githubLoginUrl}>Continue with GitHub</a>
-              )}
-            </div>
-          </div>
-        ) : loading ? (
-          <div className="loading-state" role="status">
-            <span className="loading-spinner" aria-hidden="true" />
-            Loading GitHub connection…
-          </div>
-        ) : (
-          <section className="github-integration">
-            <div className="github-integration-heading">
-              <span className="integration-logo" aria-hidden="true">GH</span>
-              <div>
-                <span className="integration-state connected"><i /> Connected</span>
-                <h2>GitHub</h2>
-                <p>OAuth identity and GitHub App repository access</p>
-              </div>
-              <a href="https://github.com/settings/installations" target="_blank" rel="noreferrer">
-                Open GitHub settings ↗
-              </a>
-            </div>
-            <div className="github-integration-grid">
-              <section>
-                <span className="integration-section-label">Connected account</span>
-                <div className="identity-row integration-identity">
-                  {user?.avatar_url ? (
-                    <Image className="settings-avatar" src={user.avatar_url} alt="" width={46} height={46} />
-                  ) : (
-                    <span className="avatar">{user?.login.slice(0, 2).toUpperCase() || "DC"}</span>
-                  )}
-                  <span>
-                    <strong>{user?.login || "Preview account"}</strong>
-                    <a
-                      href={user ? `https://github.com/${user.login}` : githubLoginUrl}
-                      target={user ? "_blank" : undefined}
-                      rel={user ? "noreferrer" : undefined}
-                    >
-                      {user ? `@${user.login} ↗` : "Sign in with GitHub"}
-                    </a>
-                  </span>
-                </div>
-              </section>
-              <section>
-                <span className="integration-section-label">GitHub App installation</span>
-                <div className="installation-summary">
-                  <span className="delta-mark delta-mark-small" aria-hidden="true"><i /></span>
-                  <span>
-                    <strong>Delta Code GitHub App</strong>
-                    <small>{repositories.length} accessible repositories</small>
-                  </span>
-                  <b>Active</b>
-                </div>
-                <div className="visibility-summary">
-                  <span><strong>{privateCount}</strong><small>Private</small></span>
-                  <span><strong>{publicCount}</strong><small>Public</small></span>
-                  <span><strong>{internalCount}</strong><small>Internal</small></span>
-                </div>
-              </section>
-            </div>
-            <section className="permissions-panel">
-              <div>
-                <span className="integration-section-label">Permissions</span>
-                <h3>Only what verification requires</h3>
-              </div>
-              <div className="permission-list">
-                <span><i>✓</i><strong>Read repository contents</strong><small>Fetch selected revisions for comparison</small></span>
-                <span><i>✓</i><strong>Read pull requests</strong><small>Respond to pull request updates</small></span>
-                <span><i>✓</i><strong>Write checks</strong><small>Publish verification evidence to GitHub</small></span>
-                <span><i>✓</i><strong>Read metadata</strong><small>Display repository identity and visibility</small></span>
-              </div>
-            </section>
-            <div className="integration-actions">
-              <a className="button button-primary" href={GITHUB_INSTALL_URL} target="_blank" rel="noreferrer">
-                Choose repositories on GitHub ↗
-              </a>
-              <a className="button button-quiet" href={githubRepositoryRefreshUrl}>
-                Refresh repository access
-              </a>
-            </div>
-          </section>
-        )}
-        <aside className="repository-security-note integration-privacy-note">
-          <span aria-hidden="true">⌁</span>
-          <div>
-            <strong>Session and repository privacy</strong>
-            <p>
-              Authentication stays server-side. Delta Code uses short-lived installation tokens
-              for selected repositories and does not expose GitHub credentials to the browser.
-            </p>
-          </div>
-        </aside>
-      </div>
-    </main>
-  );
-}
-
-function AppearancePanel() {
-  const { theme, chooseTheme } = useThemePreference();
-  return (
-    <section className="appearance-panel">
-      <div>
-        <span className="section-kicker">Appearance</span>
-        <h2>Choose your workspace theme</h2>
-        <p>Light mode is the default. Your preference is saved on this device.</p>
-      </div>
-      <div className="appearance-options">
-        {(["light", "dark"] as const).map((option) => (
-          <button
-            key={option}
-            type="button"
-            className={theme === option ? "active" : ""}
-            aria-pressed={theme === option}
-            onClick={() => chooseTheme(option)}
-          >
-            <span className={`theme-preview theme-preview-${option}`}>
-              <i />
-              <b />
-              <em />
-            </span>
-            <strong>{option === "light" ? "Light" : "Dark"}</strong>
-            <small>{option === "light" ? "Bright, calm, and focused" : "Low-glare for late sessions"}</small>
-            <i aria-hidden="true">{theme === option ? "✓" : ""}</i>
-          </button>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 function SettingsPage({ tab }: { tab: "account" | "repositories" }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
   const [loading, setLoading] = useState(Boolean(liveApiUrl));
@@ -2455,12 +1580,12 @@ function SettingsPage({ tab }: { tab: "account" | "repositories" }) {
           <div>
             <span className="section-kicker">Workspace settings</span>
             <h1>Settings</h1>
-            <p>Manage the identity and repository access Delta Code uses.</p>
+            <p>Manage the identity and repository access CodeΔ uses.</p>
           </div>
         </div>
         <nav className="settings-tabs" aria-label="Settings sections">
           <a className={tab === "account" ? "active" : ""} href="/settings/account">Account</a>
-          <a className={tab === "repositories" ? "active" : ""} href="/settings/integrations">Integrations</a>
+          <a className={tab === "repositories" ? "active" : ""} href="/settings/integrations">Repositories</a>
         </nav>
         {loading ? (
           <div className="loading-state settings-loading" role="status">
@@ -2511,7 +1636,6 @@ function SettingsPage({ tab }: { tab: "account" | "repositories" }) {
               </div>
             </div>
           </section>
-          <AppearancePanel />
           </div>
         ) : (
           <div className="settings-grid">
@@ -2524,7 +1648,7 @@ function SettingsPage({ tab }: { tab: "account" | "repositories" }) {
                 <span className="integration-state connected">
                   <i /> {repositories.length} connected
                 </span>
-                <h2>Delta Code GitHub App</h2>
+                <h2>CodeΔ GitHub App</h2>
                 <p>
                   The app receives PR events, checks out selected repositories,
                   and publishes verification evidence.
@@ -2581,7 +1705,7 @@ function SettingsPage({ tab }: { tab: "account" | "repositories" }) {
               <h2>Connect public or private repositories</h2>
               <p>
                 GitHub controls the repository picker. For a private repository,
-                its owner or organization administrator must grant the Delta Code
+                its owner or organization administrator must grant the CodeΔ
                 GitHub App access.
               </p>
             </div>
@@ -2604,7 +1728,7 @@ function SettingsPage({ tab }: { tab: "account" | "repositories" }) {
             <div>
               <strong>GitHub access stays repository-scoped.</strong>
               <p>
-                Delta Code uses a short-lived GitHub App installation token only
+                CodeΔ uses a short-lived GitHub App installation token only
                 while checking out a selected revision. Removing a repository
                 from the GitHub installation prevents future access.
               </p>
@@ -2617,7 +1741,7 @@ function SettingsPage({ tab }: { tab: "account" | "repositories" }) {
   );
 }
 
-export default function DeltaCodeApp({ route }: { route: string[] }) {
+export default function CodeDeltaApp({ route }: { route: string[] }) {
   const path = route.join("/");
   let page: React.ReactNode = null;
 
@@ -2628,21 +1752,19 @@ export default function DeltaCodeApp({ route }: { route: string[] }) {
   else if (path === "security") page = <SecurityPage />;
   else if (path === "login") page = <LoginPage />;
   else if (path === "onboarding") page = <OnboardingPage />;
-  else if (path === "overview") page = <OverviewPage />;
   else if (path === "runs") page = <RunsPage />;
-  else if (path === "repositories") page = <RepositoriesPage />;
   if (path.startsWith("runs/")) {
     page = <RunDetailPage runId={Number(path.split("/")[1])} />;
   } else if (path === "settings" || path === "settings/account") {
     page = <SettingsPage tab="account" />;
   } else if (path === "settings/integrations") {
-    page = <IntegrationsPage />;
+    page = <SettingsPage tab="repositories" />;
   } else if (!page) {
     page = (
       <main className="not-found-state standalone">
         <Wordmark />
         <span aria-hidden="true">404</span>
-        <h1>That page isn’t part of Delta Code.</h1>
+        <h1>That page isn’t part of CodeΔ.</h1>
         <p>The route may have moved or never existed.</p>
         <a className="button button-primary" href="/">
           Return home

@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "deltacode",
+  "name": "codedelta-frontend",
   "compatibility_date": "2026-05-22",
   "main": "./worker/index.ts",
   "assets": {
@@ -12,6 +12,6 @@
     "binding": "IMAGES"
   },
   "vars": {
-    "NEXT_PUBLIC_DELTA_CODE_API_URL": "https://web-production-e59907.up.railway.app"
+    "NEXT_PUBLIC_CODEDELTA_API_URL": "https://web-production-e59907.up.railway.app"
   }
 }
