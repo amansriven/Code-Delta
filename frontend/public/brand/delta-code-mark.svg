@@ -1,0 +1,11 @@
+<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="delta" x1="20" y1="14" x2="110" y2="118" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#168EB2"/>
+      <stop offset="0.58" stop-color="#3CBED1"/>
+      <stop offset="1" stop-color="#19799A"/>
+    </linearGradient>
+  </defs>
+  <path fill-rule="evenodd" clip-rule="evenodd" d="M64 8L120 112H8L64 8ZM64 38.4L35.2 96H92.8L64 38.4Z" fill="url(#delta)"/>
+  <circle cx="108" cy="108" r="12" fill="#F27668" stroke="white" stroke-width="6"/>
+</svg>

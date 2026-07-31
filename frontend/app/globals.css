@@ -5942,6 +5942,29 @@ body {
   transition: color 180ms ease, background 180ms ease;
 }
 
+.button-primary {
+  color: #f8fdff;
+  border-color: var(--accent);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  box-shadow: 0 9px 24px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+.button-primary:not(:disabled):hover {
+  color: #fff;
+  border-color: var(--accent-strong);
+  background: linear-gradient(135deg, var(--accent-strong), var(--accent));
+}
+
+:root[data-theme="dark"] .hero h1 em {
+  background: linear-gradient(100deg, #68d5e5 5%, #69b9dc 50%, #72d1ae 95%);
+  background-clip: text;
+  -webkit-background-clip: text;
+}
+
+:root[data-theme="dark"] .experience-orb-three {
+  background: radial-gradient(circle, rgba(71, 166, 190, 0.2), transparent 68%);
+}
+
 .wordmark {
   gap: 10px;
   color: var(--text);

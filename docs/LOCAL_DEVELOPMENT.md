@@ -64,7 +64,7 @@ The services are available at:
 | Dashboard | `http://localhost:3000` |
 | API | `http://localhost:8000` |
 | API health | `http://localhost:8000/health` |
-| PostgreSQL | `postgresql://codedelta:codedelta@localhost:5432/codedelta` |
+| PostgreSQL | `postgresql://deltacode:deltacode@localhost:5432/deltacode` |
 
 The API and worker read configuration from environment variables. Export
 GitHub App and OAuth values in the shell before starting them when testing

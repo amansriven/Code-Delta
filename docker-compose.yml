@@ -2,13 +2,13 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: codedelta
-      POSTGRES_PASSWORD: codedelta
-      POSTGRES_DB: codedelta
+      POSTGRES_USER: deltacode
+      POSTGRES_PASSWORD: deltacode
+      POSTGRES_DB: deltacode
     ports:
       - "5432:5432"
     volumes:
-      - codedelta_pgdata:/var/lib/postgresql/data
+      - deltacode_pgdata:/var/lib/postgresql/data
 
 volumes:
-  codedelta_pgdata:
+  deltacode_pgdata:

@@ -16,7 +16,7 @@ app.include_router(oauth_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://codedelta-frontend.amansriven757.workers.dev",
+        "https://deltacode.amansriven757.workers.dev",
         "http://localhost:3000",
     ],
     allow_credentials=True,

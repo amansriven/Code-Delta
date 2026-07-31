@@ -2,7 +2,7 @@
 
 Handoff spec for the next round of frontend work. `frontend-plan.md` covered
 v1 (landing page, runs list, basic run detail, GitHub OAuth) — that's now
-fully built and live at https://codedelta-frontend.amansriven757.workers.dev,
+fully built and live at https://deltacode.amansriven757.workers.dev,
 backed by a real API at https://web-production-e59907.up.railway.app. Real
 GitHub OAuth, server-side sessions, and repo-scoped access control are done
 and verified against a live GitHub account. Sign-out also just shipped.
@@ -32,10 +32,10 @@ account/repo management surface. Four features, roughly in priority order.
 {
   "login": "amansriven",
   "avatar_url": "https://avatars.githubusercontent.com/u/189822438?v=4",
-  "accessible_repos": ["amansriven/codedelta-demo-app"],
+  "accessible_repos": ["amansriven/delta-code-demo-app"],
   "repositories": [
     {
-      "full_name": "amansriven/codedelta-demo-app",
+      "full_name": "amansriven/delta-code-demo-app",
       "private": false,
       "visibility": "public"
     }
@@ -43,7 +43,7 @@ account/repo management surface. Four features, roughly in priority order.
 }
 ```
 401 if not signed in. `accessible_repos` is exactly the repos the signed-in
-user can access through the CodeDeltaApp GitHub App installation(s) they're a
+user can access through the Delta Code GitHub App installation(s) they're a
 member of. `repositories` carries the same access list with visibility
 metadata for the settings UI.
 
@@ -51,7 +51,7 @@ metadata for the settings UI.
 ```json
 {
   "id": 14,
-  "repo": "amansriven/codedelta-demo-app",
+  "repo": "amansriven/delta-code-demo-app",
   "pr_number": 1,
   "status": "done",
   "result": { "findings": [...] },

@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/brand/codedelta-hero.png" alt="Delta Code — Your API changed. Know exactly how." width="900">
+  <img src="docs/assets/brand/delta-code-hero.png" alt="Delta Code — Your API changed. Know exactly how." width="900">
 </p>
 
 <p align="center">
@@ -20,13 +20,37 @@
 </p>
 
 ---
-## Live preview
+## Frontend deployment
 
-Delta Code is available at:
+The Cloudflare Worker is configured with the new `deltacode` site name. After
+the renamed frontend is created and deployed, its Workers URL will be:
 
-**[Open the Delta Code dashboard](https://codedelta-frontend.amansriven757.workers.dev)**
+**[deltacode.amansriven757.workers.dev](https://deltacode.amansriven757.workers.dev)**
 
-> **Work in progress:** Delta Code is under active development. Some features and interfaces may change. A custom production domain will be added in the future.
+> **Work in progress:** Delta Code is under active development. The new Workers
+> site must be deployed before this URL becomes available. A custom production
+> domain will be added later.
+
+### Brand cutover checklist
+
+The application code, package metadata, environment variables, database
+defaults, documentation, and artwork now use **Delta Code**. A few
+provider-owned resources must be renamed in their respective dashboards before
+their URLs can be updated safely:
+
+1. Create and deploy the Cloudflare Worker named `deltacode`.
+2. Set Railway's `FRONTEND_URL` to the new Workers URL and redeploy the web
+   service.
+3. Rename the GitHub App display name to **Delta Code**. If its public slug
+   changes from `codedeltaapp`, update `GITHUB_INSTALL_URL` in
+   `frontend/app/DeltaCodeApp.tsx`.
+4. Rename the GitHub repository when ready, then update the repository link in
+   the frontend footer.
+5. Optionally rename the Railway service display names; the existing `web` and
+   `worker` service identifiers can remain unchanged.
+
+The Greek delta (`Δ`) is reserved for the visual mark. Product copy and
+accessible text use the official name **Delta Code**.
 
 ## Why Delta Code?
 
@@ -115,7 +139,16 @@ and return while a separate worker performs the comparison.
 - Asynchronous run lifecycle: `pending → running → done | failed`.
 - Persisted results, failure details, and retry support.
 - Demo FastAPI applications with intentionally introduced regressions.
-- Responsive dashboard for run history and side-by-side response evidence.
+- Light-first responsive dashboard with an optional low-glare dark mode.
+- Workspace overview with repository health, recent activity, pass rate, and
+  regression summaries derived from the API.
+- Searchable run history with status filters and per-repository grouping.
+- Repository directory with public, private, internal, and unknown visibility.
+- GitHub integration details, permission explanations, and repository access
+  management.
+- Command palette navigation and a responsive application sidebar.
+- Rich run details with branch, commit, retry, failure, and side-by-side
+  response evidence.
 - Clearly distinguished regressions and non-regression behavior changes.
 - GitHub OAuth sessions with repository-scoped dashboard authorization.
 - Optional Ollama-assisted case generation and finding explanations, with a
@@ -137,7 +170,7 @@ MVP.
 ## Repository structure
 
 ```text
-CodeDelta/
+DeltaCode/
 ├── app/
 │   ├── main.py              # Runs API
 │   ├── webhook.py           # GitHub webhook receiver
@@ -183,7 +216,7 @@ docker compose up -d
 The default local connection is:
 
 ```text
-postgresql://codedelta:codedelta@localhost:5432/codedelta
+postgresql://deltacode:deltacode@localhost:5432/deltacode
 ```
 
 ### 2. Install the backend
@@ -219,7 +252,7 @@ Manually created runs use the bundled base and buggy demo applications:
 ```bash
 curl -X POST http://localhost:8000/runs \
   -H 'content-type: application/json' \
-  -d '{"repo": "local/codedelta-demo", "pr_number": 1}'
+  -d '{"repo": "local/delta-code-demo", "pr_number": 1}'
 
 curl http://localhost:8000/runs/1
 ```
@@ -349,7 +382,7 @@ Example local configuration:
 
 ```bash
 export GITHUB_APP_ID="..."
-export GITHUB_PRIVATE_KEY="$(cat path/to/code-delta.private-key.pem)"
+export GITHUB_PRIVATE_KEY="$(cat path/to/delta-code.private-key.pem)"
 export GITHUB_WEBHOOK_SECRET="..."
 ```
 
@@ -385,14 +418,17 @@ runtime sandbox.
 - [x] Repository-level dashboard authorization
 - [x] Hosted frontend-to-API integration
 - [x] Optional LLM-assisted case generation and explanations
-- [ ] Pagination, filtering, and operational monitoring
+- [x] Delta Code brand migration and light/dark product shell
+- [x] Overview, repositories, integrations, and account experiences
+- [ ] API pagination and deeper operational monitoring
+- [ ] Sandboxed execution for untrusted pull-request code
 
 ## Brand assets
 
 <p align="center">
-  <img src="docs/assets/brand/codedelta-badge.png" alt="Delta Code dark badge" width="260">
+  <img src="docs/assets/brand/delta-code-badge.png" alt="Delta Code dark badge" width="260">
   &nbsp;&nbsp;&nbsp;
-  <img src="docs/assets/brand/codedelta-mark.png" alt="Delta Code standalone mark" width="180">
+  <img src="docs/assets/brand/delta-code-mark.png" alt="Delta Code standalone mark" width="180">
 </p>
 
 The full product brief is available in

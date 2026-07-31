@@ -87,14 +87,14 @@ const missingItem: Finding = {
 export const demoRuns: RunSummary[] = [
   {
     id: 15,
-    repo: "amansriven/codedelta-demo-app",
+    repo: "amansriven/delta-code-demo-app",
     pr_number: 4,
     status: "running",
     created_at: "2026-07-27T14:42:08.000Z",
   },
   {
     id: 14,
-    repo: "amansriven/codedelta-demo-app",
+    repo: "amansriven/delta-code-demo-app",
     pr_number: 1,
     status: "done",
     created_at: "2026-07-27T13:51:34.538Z",

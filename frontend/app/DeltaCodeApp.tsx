@@ -1212,18 +1212,19 @@ function WorkspaceMetric({
 }
 
 function MiniActivityChart({ runs }: { runs: RunSummary[] }) {
+  const weekdayLabels = ["S", "M", "T", "W", "T", "F", "S"];
   const days = Array.from({ length: 7 }, (_, index) => {
     const date = new Date();
-    date.setHours(0, 0, 0, 0);
-    date.setDate(date.getDate() - (6 - index));
+    date.setUTCHours(0, 0, 0, 0);
+    date.setUTCDate(date.getUTCDate() - (6 - index));
     const next = new Date(date);
-    next.setDate(next.getDate() + 1);
+    next.setUTCDate(next.getUTCDate() + 1);
     const count = runs.filter((run) => {
       const timestamp = new Date(run.created_at).getTime();
       return timestamp >= date.getTime() && timestamp < next.getTime();
     }).length;
     return {
-      label: date.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 1),
+      label: weekdayLabels[date.getUTCDay()],
       count,
     };
   });

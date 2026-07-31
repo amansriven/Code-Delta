@@ -18,7 +18,7 @@ def fetch_ref(clone_url: str, ref: str, token: str | None = None) -> Path:
         encoded_token = quote(token, safe="")
         url = clone_url.replace("https://", f"https://x-access-token:{encoded_token}@")
 
-    dest = Path(tempfile.mkdtemp(prefix="codedelta-"))
+    dest = Path(tempfile.mkdtemp(prefix="delta-code-"))
     try:
         subprocess.run(
             ["git", "init", "--quiet", str(dest)],

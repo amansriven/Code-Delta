@@ -1,4 +1,4 @@
-# CodeDelta — Frontend/Dashboard Handoff
+# Delta Code — Frontend/Dashboard Handoff
 
 Backend context for whoever builds the dashboard. Full product spec is in
 [api-verifier-spec.md](api-verifier-spec.md); this doc is just the API
@@ -6,7 +6,7 @@ surface and data shapes needed to build against it.
 
 ## What this product does
 
-CodeDelta runs generated edge-case HTTP requests against a PR's base and
+Delta Code runs generated edge-case HTTP requests against a PR's base and
 head branches of a FastAPI app, and reports only requests that behaved
 *differently* between the two — actual evidence of a regression, not an
 LLM's opinion. A GitHub App webhook triggers a "run" per PR; the run's
@@ -35,8 +35,8 @@ payload, just enough for a list view.
 
 ```json
 [
-  {"id": 14, "repo": "amansriven/codedelta-demo-app", "pr_number": 1, "status": "done", "created_at": "2026-07-27T06:51:34.538262+00:00"},
-  {"id": 13, "repo": "amansriven/codedelta-demo-app", "pr_number": 1, "status": "done", "created_at": "2026-07-27T06:49:18.073678+00:00"}
+  {"id": 14, "repo": "amansriven/delta-code-demo-app", "pr_number": 1, "status": "done", "created_at": "2026-07-27T06:51:34.538262+00:00"},
+  {"id": 13, "repo": "amansriven/delta-code-demo-app", "pr_number": 1, "status": "done", "created_at": "2026-07-27T06:49:18.073678+00:00"}
 ]
 ```
 
@@ -47,7 +47,7 @@ Full run detail including findings. Real example, from an actual PR run
 ```json
 {
   "id": 14,
-  "repo": "amansriven/codedelta-demo-app",
+  "repo": "amansriven/delta-code-demo-app",
   "pr_number": 1,
   "status": "done",
   "result": {

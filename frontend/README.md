@@ -1,98 +1,61 @@
-# vinext-starter
+# Delta Code frontend
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+The Delta Code frontend contains the public product site and authenticated API
+regression dashboard. It runs on React 19, TypeScript, Vinext, and Cloudflare
+Workers.
 
-## Prerequisites
+## Local development
+
+Requirements:
 
 - Node.js `>=22.13.0`
+- the Delta Code API, either locally or on Railway
 
-## Quick Start
+Install dependencies and start the development server:
 
 ```bash
-npm install
+npm ci
 npm run dev
-npm run build
 ```
 
-This starter does not use `wrangler.jsonc`.
+Open [http://localhost:3000](http://localhost:3000).
 
-## Included Shape
+Without an API URL, the interface uses clearly labeled preview data. To connect
+the local frontend to the hosted API, create `frontend/.env`:
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```dotenv
+NEXT_PUBLIC_DELTA_CODE_API_URL=https://web-production-e59907.up.railway.app
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+All authenticated requests use `credentials: "include"` because GitHub sessions
+are stored in secure backend cookies.
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+## Product routes
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+| Route | Purpose |
+| --- | --- |
+| `/` | Public landing page |
+| `/product` | Product capabilities |
+| `/how-it-works` | Verification workflow |
+| `/docs` | Local and API documentation |
+| `/security` | Access and security model |
+| `/overview` | Authenticated workspace summary |
+| `/runs` | Searchable run history and per-repository grouping |
+| `/runs/{id}` | Run verdict, branch metadata, errors, retry, and evidence |
+| `/repositories` | Accessible public, private, and internal repositories |
+| `/settings/integrations` | GitHub account, installation, and permissions |
+| `/settings/account` | Account identity and appearance |
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+Light mode is the default. Users can switch to the low-glare dark mode from the
+application sidebar, public header, or account settings.
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+## Commands
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+- `npm run dev` — start local development
+- `npm run lint` — run ESLint
+- `npm run build` — create a production Worker build
+- `npm test` — build and verify all rendered routes
+- `npx wrangler deploy` — deploy the `deltacode` Worker
 
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+The Worker name and public API environment variable are configured in
+`wrangler.jsonc`.
