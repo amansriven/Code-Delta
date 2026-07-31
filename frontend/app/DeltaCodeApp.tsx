@@ -82,10 +82,13 @@ function useThemePreference() {
   const [theme, setTheme] = useState<ThemePreference>("light");
 
   useEffect(() => {
-    const stored = window.localStorage.getItem("delta-code-theme");
-    const initial = stored === "dark" ? "dark" : "light";
-    setTheme(initial);
-    applyTheme(initial);
+    const frame = window.requestAnimationFrame(() => {
+      const stored = window.localStorage.getItem("delta-code-theme");
+      const initial = stored === "dark" ? "dark" : "light";
+      setTheme(initial);
+      applyTheme(initial);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, []);
 
   const chooseTheme = (nextTheme: ThemePreference) => {
