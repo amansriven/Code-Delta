@@ -15,7 +15,7 @@ RAILWAY_ENV ?= production
 	deploy deploy-backend deploy-web deploy-worker deploy-frontend
 
 help:
-	@echo "Code Delta development commands"
+	@echo "Delta Code development commands"
 	@echo ""
 	@echo "  make setup             Install backend and frontend dependencies"
 	@echo "  make db-up             Start local PostgreSQL"
@@ -43,7 +43,7 @@ frontend-setup:
 
 frontend-env:
 	@test -f frontend/.env || { \
-		echo "NEXT_PUBLIC_CODEDELTA_API_URL=$(LIVE_API_URL)" > frontend/.env; \
+		echo "NEXT_PUBLIC_DELTA_CODE_API_URL=$(LIVE_API_URL)" > frontend/.env; \
 		echo "Created frontend/.env"; \
 	}
 
@@ -66,7 +66,7 @@ worker:
 	$(PROCRASTINATE) worker
 
 frontend-dev: frontend-env
-	cd frontend && NEXT_PUBLIC_CODEDELTA_API_URL="$(LIVE_API_URL)" npm run dev
+	cd frontend && NEXT_PUBLIC_DELTA_CODE_API_URL="$(LIVE_API_URL)" npm run dev
 
 frontend-start:
 	cd frontend && npm run start
@@ -99,10 +99,10 @@ deploy: deploy-backend deploy-frontend
 deploy-backend: deploy-web deploy-worker
 
 deploy-web:
-	railway up --service web --environment "$(RAILWAY_ENV)" --ci -m "Deploy Code Delta web"
+	railway up --service web --environment "$(RAILWAY_ENV)" --ci -m "Deploy Delta Code web"
 
 deploy-worker:
-	railway up --service worker --environment "$(RAILWAY_ENV)" --ci -m "Deploy Code Delta worker"
+	railway up --service worker --environment "$(RAILWAY_ENV)" --ci -m "Deploy Delta Code worker"
 
 deploy-frontend: build
 	cd frontend && npx wrangler deploy

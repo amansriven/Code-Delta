@@ -1,4 +1,4 @@
-import CodeDeltaApp from "@/app/CodeDeltaApp";
+import DeltaCodeApp from "@/app/DeltaCodeApp";
 
 export default async function CatchAllPage({
   params,
@@ -6,5 +6,5 @@ export default async function CatchAllPage({
   params: Promise<{ route?: string[] }>;
 }) {
   const { route = [] } = await params;
-  return <CodeDeltaApp route={route} />;
+  return <DeltaCodeApp route={route} />;
 }

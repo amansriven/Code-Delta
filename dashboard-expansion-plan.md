@@ -1,4 +1,4 @@
-# CodeΔ Dashboard Expansion Plan (v2)
+# Delta Code Dashboard Expansion Plan (v2)
 
 Handoff spec for the next round of frontend work. `frontend-plan.md` covered
 v1 (landing page, runs list, basic run detail, GitHub OAuth) — that's now
@@ -13,8 +13,8 @@ account/repo management surface. Four features, roughly in priority order.
 
 ## What's already true (don't rebuild)
 
-- `liveApiUrl` (from `NEXT_PUBLIC_CODEDELTA_API_URL`) gates demo vs. live data
-  throughout `CodeDeltaApp.tsx` — keep using this pattern.
+- `liveApiUrl` (from `NEXT_PUBLIC_DELTA_CODE_API_URL`) gates demo vs. live data
+  throughout `DeltaCodeApp.tsx` — keep using this pattern.
 - `app/lib/data.ts` has `fetchRuns`, `fetchRun`, `fetchMe`, `signOut`,
   `githubLoginUrl`, all already using `credentials: "include"` for the
   cross-site session cookie. Reuse these; don't re-implement fetch logic.

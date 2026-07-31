@@ -1,4 +1,4 @@
-# Code Delta development and hosting runbook
+# Delta Code development and hosting runbook
 
 The root `Makefile` is the shortest path for normal development. Run `make
 help` at any time to see the available commands.
@@ -26,7 +26,7 @@ dependencies, runs `npm ci` in `frontend/`, and creates `frontend/.env` if it
 does not exist. The default frontend API is the live Railway service:
 
 ```text
-NEXT_PUBLIC_CODEDELTA_API_URL=https://web-production-e59907.up.railway.app
+NEXT_PUBLIC_DELTA_CODE_API_URL=https://web-production-e59907.up.railway.app
 ```
 
 Override it without editing the Makefile:
