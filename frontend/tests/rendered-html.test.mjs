@@ -160,5 +160,5 @@ test("starter preview implementation is removed", async () => {
   const appSource = await readFile(new URL("../app/DeltaCodeApp.tsx", import.meta.url), "utf8");
   assert.doesNotMatch(packageJson, /react-loading-skeleton/);
   assert.match(appSource, /github\.com\/apps\/deltacodeapp\/installations\/new/);
-  assert.doesNotMatch(appSource, /github\.com\/apps\/codedeltaapp/);
+  assert.match(appSource, /github\.com\/amansriven\/DeltaCode/);
 });

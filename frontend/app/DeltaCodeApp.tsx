@@ -192,7 +192,7 @@ function PublicFooter() {
           <strong>Resources</strong>
           <a href="/docs">Documentation</a>
           <a href="/runs">Live dashboard</a>
-          <a href="https://github.com/amansriven/Code-Delta" target="_blank" rel="noreferrer">
+          <a href="https://github.com/amansriven/DeltaCode" target="_blank" rel="noreferrer">
             GitHub ↗
           </a>
         </div>
