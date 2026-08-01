@@ -1,0 +1,349 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deltacode.dev/schemas/normalized-change.schema.json",
+  "title": "Delta Code normalized provider change",
+  "description": "Provider-independent representation produced by source ingestion and consumed by repository impact analysis.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "dedupe_key",
+    "provider",
+    "status",
+    "detected_at",
+    "change_type",
+    "severity",
+    "summary",
+    "source_artifacts",
+    "targets",
+    "claims",
+    "confidence"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "dedupe_key": {
+      "type": "string",
+      "minLength": 1
+    },
+    "supersedes": {
+      "type": ["string", "null"]
+    },
+    "provider": {
+      "$ref": "#/$defs/provider"
+    },
+    "status": {
+      "enum": ["detected", "normalizing", "needs_review", "ready", "invalid", "withdrawn", "superseded"]
+    },
+    "detected_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "published_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "effective_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "deprecation_at": {
+      "type": ["string", "null"],
+      "format": "date-time"
+    },
+    "change_type": {
+      "enum": [
+        "endpoint_added",
+        "endpoint_removed",
+        "endpoint_changed",
+        "request_field_added",
+        "request_field_removed",
+        "request_field_required",
+        "request_field_optional",
+        "request_field_type_changed",
+        "response_field_added",
+        "response_field_removed",
+        "response_field_type_changed",
+        "authentication_changed",
+        "behavior_changed",
+        "sdk_symbol_added",
+        "sdk_symbol_removed",
+        "sdk_symbol_changed",
+        "sdk_release",
+        "deprecation",
+        "feature",
+        "security",
+        "unknown"
+      ]
+    },
+    "severity": {
+      "enum": ["informational", "low", "medium", "high", "critical", "unknown"]
+    },
+    "breaking": {
+      "type": ["boolean", "null"]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "before": {
+      "$ref": "#/$defs/jsonValue"
+    },
+    "after": {
+      "$ref": "#/$defs/jsonValue"
+    },
+    "version_scope": {
+      "$ref": "#/$defs/versionScope"
+    },
+    "source_artifacts": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/sourceArtifact"
+      }
+    },
+    "targets": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/target"
+      }
+    },
+    "migration_guidance": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/guidance"
+      },
+      "default": []
+    },
+    "claims": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/claim"
+      }
+    },
+    "confidence": {
+      "$ref": "#/$defs/confidence"
+    },
+    "normalizer": {
+      "$ref": "#/$defs/componentVersion"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "$defs": {
+    "jsonValue": {
+      "type": ["object", "array", "string", "number", "boolean", "null"]
+    },
+    "provider": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "product": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "sourceArtifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "source_type", "canonical_url", "captured_at", "sha256", "authoritative"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_type": {
+          "enum": ["openapi", "changelog", "migration_guide", "sdk_release", "package_registry", "documentation", "manual_official_submission", "other"]
+        },
+        "canonical_url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "captured_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "media_type": {
+          "type": ["string", "null"]
+        },
+        "authoritative": {
+          "const": true
+        }
+      }
+    },
+    "versionScope": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "previous": {
+          "type": ["string", "null"]
+        },
+        "current": {
+          "type": ["string", "null"]
+        },
+        "affected_range": {
+          "type": ["string", "null"]
+        },
+        "fixed_range": {
+          "type": ["string", "null"]
+        },
+        "scheme": {
+          "enum": ["semver", "date", "api_version", "commit", "unversioned", "unknown"]
+        }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "name"],
+      "properties": {
+        "kind": {
+          "enum": ["endpoint", "sdk_package", "symbol", "type", "field", "configuration", "authentication", "behavior"]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operation": {
+          "type": ["string", "null"]
+        },
+        "package": {
+          "type": ["string", "null"]
+        },
+        "ecosystem": {
+          "type": ["string", "null"]
+        },
+        "language": {
+          "type": ["string", "null"]
+        },
+        "version_scope": {
+          "$ref": "#/$defs/versionScope"
+        },
+        "metadata": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      }
+    },
+    "guidance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "provenance", "source_artifact_ids"],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "provenance": {
+          "enum": ["deterministic", "provider_stated", "model_inferred", "human_supplied"]
+        },
+        "source_artifact_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "claim": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "summary", "provenance", "source_artifact_ids"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "provenance": {
+          "enum": ["deterministic", "provider_stated", "model_inferred", "human_supplied"]
+        },
+        "source_artifact_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "locator": {
+          "type": ["string", "null"],
+          "description": "Section, JSON pointer, release tag, or other location within the captured artifact."
+        }
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score", "basis", "reasons", "unresolved"],
+      "properties": {
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "basis": {
+          "enum": ["deterministic", "inferred", "mixed", "human_reviewed"]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unresolved": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "componentVersion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

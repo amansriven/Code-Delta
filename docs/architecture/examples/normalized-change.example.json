@@ -1,0 +1,123 @@
+{
+  "schema_version": "1.0",
+  "id": "change_fixture_examplepay_2026_07",
+  "dedupe_key": "examplepay:payments:create-charge:request-field-required:2026-07",
+  "supersedes": null,
+  "provider": {
+    "id": "examplepay",
+    "name": "ExamplePay",
+    "product": "Payments API"
+  },
+  "status": "ready",
+  "detected_at": "2026-07-31T14:00:00Z",
+  "published_at": "2026-07-30T12:00:00Z",
+  "effective_at": "2026-10-01T00:00:00Z",
+  "deprecation_at": null,
+  "change_type": "request_field_required",
+  "severity": "high",
+  "breaking": true,
+  "summary": "Creating a charge now requires payment_method instead of the deprecated source field.",
+  "before": {
+    "required": ["amount", "currency"],
+    "accepted_payment_fields": ["source", "payment_method"]
+  },
+  "after": {
+    "required": ["amount", "currency", "payment_method"],
+    "accepted_payment_fields": ["payment_method"]
+  },
+  "version_scope": {
+    "previous": "2026-06-01",
+    "current": "2026-10-01",
+    "affected_range": "<2026-10-01",
+    "fixed_range": ">=2026-10-01",
+    "scheme": "api_version"
+  },
+  "source_artifacts": [
+    {
+      "id": "artifact_examplepay_openapi_2026_10",
+      "source_type": "openapi",
+      "canonical_url": "https://docs.example.com/examplepay/openapi.json",
+      "captured_at": "2026-07-31T13:58:00Z",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "media_type": "application/json",
+      "authoritative": true
+    },
+    {
+      "id": "artifact_examplepay_migration_2026_10",
+      "source_type": "migration_guide",
+      "canonical_url": "https://docs.example.com/examplepay/migrations/2026-10",
+      "captured_at": "2026-07-31T13:59:00Z",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "media_type": "text/html",
+      "authoritative": true
+    }
+  ],
+  "targets": [
+    {
+      "kind": "endpoint",
+      "name": "/v1/charges",
+      "operation": "POST",
+      "package": null,
+      "ecosystem": null,
+      "language": null,
+      "version_scope": {
+        "previous": "2026-06-01",
+        "current": "2026-10-01",
+        "affected_range": "<2026-10-01",
+        "fixed_range": ">=2026-10-01",
+        "scheme": "api_version"
+      },
+      "metadata": {}
+    },
+    {
+      "kind": "field",
+      "name": "payment_method",
+      "operation": "POST /v1/charges",
+      "package": "examplepay",
+      "ecosystem": "npm",
+      "language": "typescript",
+      "metadata": {
+        "location": "request_body"
+      }
+    }
+  ],
+  "migration_guidance": [
+    {
+      "summary": "Replace source with a payment method identifier and update fixtures that construct charge requests.",
+      "provenance": "provider_stated",
+      "source_artifact_ids": ["artifact_examplepay_migration_2026_10"]
+    }
+  ],
+  "claims": [
+    {
+      "id": "claim_required_payment_method",
+      "summary": "payment_method is required for POST /v1/charges in the new version.",
+      "provenance": "deterministic",
+      "source_artifact_ids": ["artifact_examplepay_openapi_2026_10"],
+      "locator": "/paths/~1v1~1charges/post/requestBody"
+    },
+    {
+      "id": "claim_replace_source",
+      "summary": "The provider migration guide instructs consumers to replace source with payment_method.",
+      "provenance": "provider_stated",
+      "source_artifact_ids": ["artifact_examplepay_migration_2026_10"],
+      "locator": "Request migration"
+    }
+  ],
+  "confidence": {
+    "score": 0.98,
+    "basis": "mixed",
+    "reasons": [
+      "The field requirement is present in the captured OpenAPI diff.",
+      "The official migration guide describes the replacement."
+    ],
+    "unresolved": []
+  },
+  "normalizer": {
+    "id": "openapi-and-guide-adapter",
+    "version": "1.0.0"
+  },
+  "metadata": {
+    "fixture": true
+  }
+}

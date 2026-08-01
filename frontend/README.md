@@ -1,8 +1,10 @@
 # Delta Code frontend
 
-The Delta Code frontend contains the public product site and authenticated API
-regression dashboard. It runs on React 19, TypeScript, and native Next.js, and
-is deployed on Vercel.
+The Delta Code frontend currently contains the public product site and
+authenticated API regression dashboard. It runs on React 19, TypeScript, and
+native Next.js, and is deployed on Vercel. The planned migration inbox is
+defined in the [Phase 0 product RFC](../docs/architecture/phase-0-rfc.md); the
+routes below describe the current implementation.
 
 ## Local development
 

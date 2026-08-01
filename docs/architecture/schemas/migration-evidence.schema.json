@@ -1,0 +1,643 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://deltacode.dev/schemas/migration-evidence.schema.json",
+  "title": "Delta Code migration evidence",
+  "description": "Repository-specific impact, patch, verification, review, and pull-request evidence for one immutable migration attempt.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "migration_id",
+    "attempt_id",
+    "change_event_id",
+    "repository",
+    "impact",
+    "plan",
+    "patch",
+    "tests",
+    "verification_checks",
+    "review",
+    "recommendation",
+    "created_at",
+    "completed_at"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "migration_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "attempt_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "previous_attempt_id": {
+      "type": ["string", "null"]
+    },
+    "change_event_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "repository": {
+      "$ref": "#/$defs/repository"
+    },
+    "impact": {
+      "$ref": "#/$defs/impact"
+    },
+    "plan": {
+      "$ref": "#/$defs/plan"
+    },
+    "patch": {
+      "$ref": "#/$defs/patch"
+    },
+    "tests": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/testChange"
+      }
+    },
+    "verification_checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/check"
+      }
+    },
+    "behavioral_evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/behavioralEvidence"
+      },
+      "default": []
+    },
+    "review": {
+      "$ref": "#/$defs/review"
+    },
+    "recommendation": {
+      "$ref": "#/$defs/recommendation"
+    },
+    "pull_request": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/pullRequest"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "tool_versions": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/componentVersion"
+      }
+    },
+    "cost": {
+      "$ref": "#/$defs/cost"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "$defs": {
+    "repository": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "full_name", "base_branch", "base_commit_sha", "snapshot_digest"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "full_name": {
+          "type": "string",
+          "pattern": "^[^/]+/[^/]+$"
+        },
+        "base_branch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "base_commit_sha": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{7,64}$"
+        },
+        "snapshot_digest": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "impact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["assessment_id", "conclusion", "summary", "call_sites", "coverage", "confidence"],
+      "properties": {
+        "assessment_id": {
+          "type": "string"
+        },
+        "conclusion": {
+          "enum": ["affected", "unaffected", "uncertain", "unsupported", "failed"]
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "dependency_matches": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/dependencyMatch"
+          }
+        },
+        "call_sites": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/callSite"
+          }
+        },
+        "coverage": {
+          "$ref": "#/$defs/coverage"
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        }
+      }
+    },
+    "dependencyMatch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["ecosystem", "package", "detection_method", "evidence"],
+      "properties": {
+        "ecosystem": {
+          "type": "string"
+        },
+        "package": {
+          "type": "string"
+        },
+        "resolved_version": {
+          "type": ["string", "null"]
+        },
+        "source_path": {
+          "type": ["string", "null"]
+        },
+        "detection_method": {
+          "enum": ["manifest", "lockfile", "generated_client", "import", "configuration", "endpoint", "other"]
+        },
+        "evidence": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "callSite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "start_line", "end_line", "detection_method", "reason", "confidence"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "start_line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "end_line": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "language": {
+          "type": ["string", "null"]
+        },
+        "symbol": {
+          "type": ["string", "null"]
+        },
+        "target": {
+          "type": ["string", "null"]
+        },
+        "detection_method": {
+          "enum": ["lockfile", "ast", "type_index", "symbol_index", "generated_code", "configuration", "text_heuristic", "model_inference"]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["supported", "files_considered", "files_excluded", "parse_failures", "limitations"],
+      "properties": {
+        "supported": {
+          "type": "boolean"
+        },
+        "languages": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "files_considered": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "files_excluded": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "parse_failures": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "limitations": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "plan": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "steps", "verification_strategy", "assumptions", "unresolved"],
+      "properties": {
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/planStep"
+          }
+        },
+        "verification_strategy": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "assumptions": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "unresolved": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "planStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "description", "call_site_ids", "expected_paths"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string",
+          "minLength": 1
+        },
+        "call_site_ids": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        },
+        "expected_paths": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "patch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact_id", "sha256", "files", "summary"],
+      "properties": {
+        "artifact_id": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{64}$"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/fileChange"
+          }
+        }
+      }
+    },
+    "fileChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "change_type", "plan_step_ids"],
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "change_type": {
+          "enum": ["added", "modified", "deleted", "renamed"]
+        },
+        "previous_path": {
+          "type": ["string", "null"]
+        },
+        "plan_step_ids": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "testChange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "action", "purpose", "provenance"],
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "action": {
+          "enum": ["added", "modified", "deleted"]
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "provenance": {
+          "enum": ["generated", "existing_modified", "deterministic_fixture", "human_supplied"]
+        }
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "kind", "status", "deterministic", "duration_ms", "executor", "summary"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "kind": {
+          "enum": ["dependency_install", "format", "lint", "type_check", "build", "unit_test", "generated_test", "behavioral_verification", "security_policy", "other"]
+        },
+        "status": {
+          "enum": ["passed", "failed", "skipped", "timed_out", "blocked", "infrastructure_error"]
+        },
+        "deterministic": {
+          "const": true
+        },
+        "command": {
+          "type": ["string", "null"]
+        },
+        "exit_code": {
+          "type": ["integer", "null"]
+        },
+        "duration_ms": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "executor": {
+          "$ref": "#/$defs/componentVersion"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "display_log": {
+          "type": ["string", "null"],
+          "maxLength": 20000
+        },
+        "log_artifact_id": {
+          "type": ["string", "null"]
+        }
+      }
+    },
+    "behavioralEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "check_id", "summary", "observed"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "check_id": {
+          "type": "string"
+        },
+        "summary": {
+          "type": "string"
+        },
+        "observed": {
+          "const": true
+        },
+        "before": {
+          "$ref": "#/$defs/jsonValue"
+        },
+        "after": {
+          "$ref": "#/$defs/jsonValue"
+        },
+        "artifact_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "findings", "provenance", "model"],
+      "properties": {
+        "summary": {
+          "type": "string"
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/reviewFinding"
+          }
+        },
+        "provenance": {
+          "const": "model_inferred"
+        },
+        "model": {
+          "$ref": "#/$defs/componentVersion"
+        }
+      }
+    },
+    "reviewFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["severity", "summary", "resolved"],
+      "properties": {
+        "severity": {
+          "enum": ["info", "low", "medium", "high", "critical"]
+        },
+        "path": {
+          "type": ["string", "null"]
+        },
+        "line": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "summary": {
+          "type": "string"
+        },
+        "resolved": {
+          "type": "boolean"
+        }
+      }
+    },
+    "recommendation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action", "rationale", "confidence", "unresolved"],
+      "properties": {
+        "action": {
+          "enum": ["approve", "revise", "snooze", "decline"]
+        },
+        "rationale": {
+          "type": "string",
+          "minLength": 1
+        },
+        "confidence": {
+          "$ref": "#/$defs/confidence"
+        },
+        "unresolved": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "pullRequest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provider", "repository", "number", "url", "draft", "branch", "head_sha", "status"],
+      "properties": {
+        "provider": {
+          "const": "github"
+        },
+        "repository": {
+          "type": "string"
+        },
+        "number": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "url": {
+          "type": "string",
+          "format": "uri"
+        },
+        "draft": {
+          "type": "boolean"
+        },
+        "branch": {
+          "type": "string"
+        },
+        "head_sha": {
+          "type": "string",
+          "pattern": "^[a-fA-F0-9]{7,64}$"
+        },
+        "status": {
+          "enum": ["opening", "open", "ready", "closed", "merged", "failed"]
+        }
+      }
+    },
+    "componentVersion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version"],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      }
+    },
+    "confidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score", "basis", "reasons"],
+      "properties": {
+        "score": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "basis": {
+          "enum": ["deterministic", "inferred", "mixed", "human_reviewed"]
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "currency": {
+          "const": "USD"
+        },
+        "model_input_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "model_output_tokens": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "model_cost": {
+          "type": "number",
+          "minimum": 0
+        },
+        "sandbox_seconds": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "jsonValue": {
+      "type": ["object", "array", "string", "number", "boolean", "null"]
+    }
+  }
+}

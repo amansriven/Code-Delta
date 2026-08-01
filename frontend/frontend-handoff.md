@@ -1,10 +1,13 @@
 # Delta Code — Frontend/Dashboard Handoff
 
-Backend context for whoever builds the dashboard. Full product spec is in
-[api-verifier-spec.md](api-verifier-spec.md); this doc is just the API
-surface and data shapes needed to build against it.
+> **Status:** Current verifier API reference. It does not define the future
+> migration-inbox API. The accepted product direction and new contracts are in
+> the [Phase 0 product RFC](../docs/architecture/phase-0-rfc.md).
 
-## What this product does
+Backend context for the dashboard currently deployed with Delta Code. This
+document describes the existing `/runs` surface and data shapes only.
+
+## What the current verifier does
 
 Delta Code runs generated edge-case HTTP requests against a PR's base and
 head branches of a FastAPI app, and reports only requests that behaved
@@ -22,10 +25,11 @@ PYTHONPATH=. ./.venv/bin/python -m procrastinate --app app.procrastinate_app.pro
 PYTHONPATH=. ./.venv/bin/python -m procrastinate --app app.procrastinate_app.procrastinate_app worker  # separate terminal
 ```
 
-No auth on the API currently — it's local-only (v1 has no hosted
-multi-tenant deployment yet). If the dashboard is going to be exposed
-publicly, that needs to be added before it ships; don't assume it's safe to
-skip.
+Hosted run endpoints require a secure GitHub-backed session and filter data to
+repositories available to that session. Local development still needs the
+OAuth and GitHub App environment described in
+[`docs/LOCAL_DEVELOPMENT.md`](../docs/LOCAL_DEVELOPMENT.md) for the complete
+authenticated flow.
 
 ## API endpoints (all in `app/main.py` / `app/webhook.py`)
 
@@ -115,11 +119,11 @@ handle that case gracefully.
   succeeds). Real, worth surfacing, but not the same severity as a
   regression — the spec's framing is "worth a note," not "you broke this."
 
-There is currently no UI distinguishing these — that's a known gap flagged
-during backend development, and probably the most important design decision
-in the whole dashboard.
+The implemented run-detail UI distinguishes these finding types. Preserve the
+semantic difference while the verifier remains available as a migration
+verification capability.
 
-## Suggested first cut
+## Historical first cut
 
 1. Runs list (`GET /runs`) — repo, PR number, status, timestamp, link to
    the GitHub PR (needs `pr_number` + `repo` to construct
@@ -127,6 +131,6 @@ in the whole dashboard.
 2. Run detail (`GET /runs/{id}`) — one card/row per finding, each showing
    the request (method/path/body), and a base-vs-PR response diff
    (status code + body side by side), with `kind` visually distinguished
-3. Nothing else exists yet (no auth, no pagination beyond the 50-row limit,
-   no polling/websocket for live status) — all reasonable v2 additions, not
-   blockers for a first dashboard.
+3. The first cut originally omitted authentication and richer run state. Those
+   capabilities now exist; cursor pagination and live push updates remain
+   future work.

@@ -1,5 +1,11 @@
 # Delta Code Frontend Implementation Plan
 
+> **Status:** Implemented legacy verifier plan. Keep this document as context
+> for the current UI; do not use it to design the migration inbox. Future
+> frontend work follows the
+> [Phase 0 product RFC](../docs/architecture/phase-0-rfc.md) and
+> [system contracts](../docs/architecture/contracts.md).
+
 ## 1. Product objective
 
 Build a calm, polished dashboard that makes Delta Code's core value immediately
@@ -15,10 +21,11 @@ The frontend must make it easy to:
 5. Inspect the exact request and compare base and PR responses.
 6. Understand queued, running, successful, empty, and failed states.
 
-The first implementation will be a working product demo connected to the
-existing API where available. Secure hosted GitHub authentication remains a
-backend capability: the current API has no user, session, or authorization
-model and must not be exposed publicly as-is.
+The first implementation was designed as a working product demo connected to
+the existing API. Secure hosted GitHub authentication remains a backend
+responsibility; the implemented dashboard now uses secure sessions and
+repository-scoped authorization. Future migration-inbox APIs must preserve
+that server-side boundary.
 
 ## 2. Experience principles
 

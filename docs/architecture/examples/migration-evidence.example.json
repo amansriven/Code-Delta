@@ -1,0 +1,197 @@
+{
+  "schema_version": "1.0",
+  "migration_id": "migration_fixture_inventory_api",
+  "attempt_id": "attempt_fixture_001",
+  "previous_attempt_id": null,
+  "change_event_id": "change_fixture_examplepay_2026_07",
+  "repository": {
+    "id": "repo_fixture_inventory_api",
+    "full_name": "acme/inventory-api",
+    "base_branch": "main",
+    "base_commit_sha": "0123456789abcdef0123456789abcdef01234567",
+    "snapshot_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "impact": {
+    "assessment_id": "impact_fixture_001",
+    "conclusion": "affected",
+    "summary": "The repository uses the affected SDK field in one charge-creation call site.",
+    "dependency_matches": [
+      {
+        "ecosystem": "npm",
+        "package": "examplepay",
+        "resolved_version": "4.2.0",
+        "source_path": "package-lock.json",
+        "detection_method": "lockfile",
+        "evidence": "The resolved ExamplePay SDK is within the affected version scope."
+      }
+    ],
+    "call_sites": [
+      {
+        "id": "callsite_charge_service_42",
+        "path": "src/payments/charge-service.ts",
+        "start_line": 42,
+        "end_line": 48,
+        "language": "typescript",
+        "symbol": "client.charges.create",
+        "target": "POST /v1/charges",
+        "detection_method": "ast",
+        "reason": "The call constructs a charge request with the deprecated source field.",
+        "confidence": {
+          "score": 0.99,
+          "basis": "deterministic",
+          "reasons": ["The imported SDK symbol and object property are resolved by the TypeScript analyzer."]
+        }
+      }
+    ],
+    "coverage": {
+      "supported": true,
+      "languages": ["typescript"],
+      "files_considered": 84,
+      "files_excluded": 391,
+      "parse_failures": 0,
+      "limitations": ["Generated files and node_modules were excluded."]
+    },
+    "confidence": {
+      "score": 0.98,
+      "basis": "deterministic",
+      "reasons": ["Dependency and call-site evidence agree on the affected provider target."]
+    }
+  },
+  "plan": {
+    "summary": "Replace the deprecated source field with payment_method and update the affected unit test fixture.",
+    "steps": [
+      {
+        "id": "step_replace_request_field",
+        "description": "Pass paymentMethod as payment_method when creating a charge.",
+        "call_site_ids": ["callsite_charge_service_42"],
+        "expected_paths": ["src/payments/charge-service.ts"]
+      },
+      {
+        "id": "step_update_test_fixture",
+        "description": "Update the charge-service unit test to assert the new request shape.",
+        "call_site_ids": ["callsite_charge_service_42"],
+        "expected_paths": ["src/payments/charge-service.test.ts"]
+      }
+    ],
+    "verification_strategy": ["npm run lint", "npm run typecheck", "npm test"],
+    "assumptions": ["paymentMethod is already available to the service method."],
+    "unresolved": []
+  },
+  "patch": {
+    "artifact_id": "artifact_patch_fixture_001",
+    "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "summary": "Update the charge request and matching test fixture for the new provider field.",
+    "files": [
+      {
+        "path": "src/payments/charge-service.ts",
+        "change_type": "modified",
+        "previous_path": null,
+        "plan_step_ids": ["step_replace_request_field"]
+      },
+      {
+        "path": "src/payments/charge-service.test.ts",
+        "change_type": "modified",
+        "previous_path": null,
+        "plan_step_ids": ["step_update_test_fixture"]
+      }
+    ]
+  },
+  "tests": [
+    {
+      "path": "src/payments/charge-service.test.ts",
+      "action": "modified",
+      "purpose": "Prove the service sends payment_method and no longer sends source.",
+      "provenance": "existing_modified"
+    }
+  ],
+  "verification_checks": [
+    {
+      "id": "check_lint",
+      "kind": "lint",
+      "status": "passed",
+      "deterministic": true,
+      "command": "npm run lint",
+      "exit_code": 0,
+      "duration_ms": 1820,
+      "executor": {
+        "id": "fixture-sandbox",
+        "version": "1.0.0"
+      },
+      "summary": "Lint completed without errors.",
+      "display_log": "Lint passed.",
+      "log_artifact_id": "artifact_log_lint"
+    },
+    {
+      "id": "check_type",
+      "kind": "type_check",
+      "status": "passed",
+      "deterministic": true,
+      "command": "npm run typecheck",
+      "exit_code": 0,
+      "duration_ms": 2310,
+      "executor": {
+        "id": "fixture-sandbox",
+        "version": "1.0.0"
+      },
+      "summary": "Type-check completed without errors.",
+      "display_log": "Type-check passed.",
+      "log_artifact_id": "artifact_log_type"
+    },
+    {
+      "id": "check_tests",
+      "kind": "unit_test",
+      "status": "passed",
+      "deterministic": true,
+      "command": "npm test",
+      "exit_code": 0,
+      "duration_ms": 4920,
+      "executor": {
+        "id": "fixture-sandbox",
+        "version": "1.0.0"
+      },
+      "summary": "All 42 unit tests passed, including the modified charge-service test.",
+      "display_log": "42 passed, 0 failed.",
+      "log_artifact_id": "artifact_log_tests"
+    }
+  ],
+  "behavioral_evidence": [],
+  "review": {
+    "summary": "The patch is limited to the affected request and its unit test, and the configured checks pass.",
+    "findings": [],
+    "provenance": "model_inferred",
+    "model": {
+      "id": "fixture-review-model",
+      "version": "mock-1"
+    }
+  },
+  "recommendation": {
+    "action": "approve",
+    "rationale": "The affected call site was updated, the request-shape test was strengthened, and every configured deterministic check passed.",
+    "confidence": {
+      "score": 0.95,
+      "basis": "mixed",
+      "reasons": ["Impact evidence is deterministic and all configured checks passed."]
+    },
+    "unresolved": ["No live provider test environment was configured for behavioral verification."]
+  },
+  "pull_request": null,
+  "tool_versions": [
+    {
+      "id": "typescript-impact-analyzer",
+      "version": "1.0.0"
+    },
+    {
+      "id": "fixture-sandbox",
+      "version": "1.0.0"
+    }
+  ],
+  "cost": {
+    "currency": "USD",
+    "model_input_tokens": 4200,
+    "model_output_tokens": 1100,
+    "model_cost": 0.12,
+    "sandbox_seconds": 12.4
+  },
+  "created_at": "2026-07-31T14:10:00Z",
+  "completed_at": "2026-07-31T14:12:05Z"
+}

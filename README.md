@@ -3,18 +3,19 @@
 </p>
 
 <p align="center">
-  <strong>Evidence-first API regression detection for pull requests.</strong>
+  <strong>Dependabot for APIs—repository-specific migrations with verification evidence.</strong>
 </p>
 
 <p align="center">
-  Delta Code runs the same targeted requests against both sides of a pull
-  request and shows the behavior that actually changed.
+  Delta Code is evolving into an API change-management platform that connects
+  official provider changes to affected code, verified migrations, and draft
+  pull requests.
 </p>
 
 <p align="center">
   <a href="https://deltacode-tau.vercel.app/"><strong>Explore Delta Code</strong></a>
   ·
-  <a href="api-verifier-spec.md">Product brief</a>
+  <a href="docs/architecture/phase-0-rfc.md">Product RFC</a>
 </p>
 
 <p align="center">
@@ -29,26 +30,29 @@
 
 ## The problem
 
-An API pull request can look harmless in a code diff while silently changing
-what clients experience:
+External API and SDK changes are announced separately from the code that
+depends on them. Breaking changes can ship with little warning, useful features
+go unnoticed, and developers must manually connect changelogs to dependencies,
+call sites, code changes, tests, and rollout risk.
 
-- an optional field becomes required;
-- a missing resource changes from `404` to `200`;
-- a valid payload starts returning `422`;
-- an endpoint stops returning fields consumers depend on;
-- an edge case that worked on the base branch begins producing a server error.
+Package update tools can propose a version bump, and generic coding agents can
+modify a repository when instructed. Neither establishes the complete causal
+chain Delta Code is designed to provide:
 
-Code review and static analysis can suggest that something *might* be wrong,
-but reviewers still need to know whether the change can be reproduced.
+> **An authoritative external change occurred; this repository is affected at
+> these call sites; this patch performs the migration; and this evidence shows
+> what passed, failed, or remains uncertain.**
 
-Delta Code answers a narrower, more useful question:
+The target workflow is:
 
-> **Did the same request behave differently on this pull request than it did
-> on the base branch?**
+> API change detected → change normalized from official sources → affected
+> repositories and call sites identified → migration and tests generated →
+> sandboxed verification → draft PR → automated review → developer decision.
 
-## What Delta Code does
+## What Delta Code does today
 
-Delta Code connects to GitHub and evaluates API behavior whenever a monitored
+The current implementation is the evidence-producing foundation for that
+direction. It connects to GitHub and evaluates API behavior whenever a monitored
 pull request opens or changes.
 
 It:
@@ -181,11 +185,11 @@ evidence, reduced-motion support, and responsive layouts.
 
 Delta Code is designed for:
 
-- backend engineers reviewing API changes;
-- teams maintaining FastAPI services;
-- platform engineers responsible for pull-request quality gates;
-- API owners who need concrete compatibility evidence;
-- reviewers who want a faster path from code change to observable impact.
+- application teams that depend on third-party APIs and SDKs;
+- platform engineers responsible for dependency and migration policy;
+- API providers that want changes to be safely adoptable by customers;
+- reviewers who need concrete evidence before accepting generated migrations;
+- backend engineers validating observable API behavior.
 
 ## Current scope
 
@@ -225,24 +229,26 @@ execution service.
 
 ## Product direction
 
-Completed foundations include deterministic OpenAPI diffing, targeted case
-generation, real base-versus-pull-request execution, GitHub Checks, secure
-dashboard sessions, private-repository checkout, and the expanded product
-dashboard.
+Delta Code is becoming a provider-independent API change-management and
+migration platform. It will monitor official API and SDK sources, normalize
+changes, identify affected repositories and call sites, generate code and tests,
+verify migrations in a sandbox, open draft pull requests, review its own work,
+and recommend approve, revise, snooze, or decline.
 
-The next major product priorities are:
+LLMs will interpret ambiguous source material, understand repository context,
+generate migrations and tests, and explain uncertainty. Deterministic systems
+will retain authority over source hashes, specification and SDK diffs,
+dependency discovery, symbol analysis, compilation, tests, and behavioral
+verification.
 
-- sandboxed execution for untrusted pull-request code;
-- deeper response-body and schema comparison;
-- richer test-case generation informed by the pull-request diff;
-- clearer evidence explanations and developer guidance;
-- additional API frameworks and repository configurations;
-- pagination, observability, and operational controls for larger workspaces.
+The accepted Phase 0 direction, domain model, contracts, schemas, and security
+boundaries live in [the architecture directory](docs/architecture/README.md).
 
 ## Project documentation
 
-- [Product specification](api-verifier-spec.md)
-- [Dashboard API contract](frontend-handoff.md)
+- [API migration product RFC](docs/architecture/phase-0-rfc.md)
+- [Architecture contracts](docs/architecture/README.md)
+- [Current dashboard API handoff](frontend/frontend-handoff.md)
 - [Local development and contributor runbook](docs/LOCAL_DEVELOPMENT.md)
 
 The development runbook keeps contributor setup and testing commands separate
