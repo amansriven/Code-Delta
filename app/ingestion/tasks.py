@@ -55,3 +55,9 @@ def sync_provider_source(workspace_id: str, source_id: str, idempotency_key: str
         "completed",
         result=result.model_dump(mode="json"),
     )
+    from app.repository_intelligence.tasks import enqueue_repository_analysis
+
+    enqueue_repository_analysis.defer(
+        workspace_id=workspace_id,
+        change_event_ids=result.change_event_ids,
+    )

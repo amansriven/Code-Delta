@@ -96,7 +96,8 @@ eliminate DNS-rebinding races.
 
 ## Phase 3 handoff
 
-Phase 3 consumes `change_fanout_jobs`, materializes immutable repository
+The implemented [Phase 3 repository intelligence](phase-3-repository-intelligence.md)
+consumes `change_fanout_jobs`, materializes immutable repository
 snapshots, inventories dependencies and languages, locates call sites, and
 creates supported impact assessments. It must preserve the normalized event's
 artifact ids and claim provenance and must not treat a queued fan-out job as

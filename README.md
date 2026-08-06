@@ -185,6 +185,9 @@ evidence, reduced-motion support, and responsive layouts.
 - Phase 2 official-source ingestion with SSRF controls, immutable artifact
   capture, OpenAPI and structured-release normalization, provenance, health,
   deduplication, and repository fan-out.
+- Phase 3 immutable repository snapshots, deterministic PyPI/npm dependency
+  inventory, Python AST call-site analysis, explicit coverage outcomes, and
+  affected migration fan-out without executing repository code.
 
 ## Who Delta Code is for
 
@@ -215,10 +218,12 @@ Repository access is controlled by the GitHub App installation. Dashboard
 identity uses a separate GitHub OAuth flow, and run data is scoped to
 repositories the signed-in user can access.
 
-The current worker executes checked-out pull-request code in its worker
-environment. Until that execution is fully sandboxed, Delta Code should be
-treated as a trusted-development MVP rather than a general multi-tenant
-execution service.
+The legacy API-comparison worker still executes checked-out pull-request code
+in its worker environment. The Phase 4 migration path does not: it validates
+structured edits in the trusted worker and sends all repository-controlled
+commands to a separate Cloudflare Sandbox Worker with outbound traffic denied.
+Hosted migration execution remains fail-closed until its explicit enablement
+flag is set after isolation testing.
 
 ## Technology
 
@@ -255,6 +260,8 @@ boundaries live in [the architecture directory](docs/architecture/README.md).
 - [Architecture contracts](docs/architecture/README.md)
 - [Phase 1 control-plane implementation](docs/architecture/phase-1-control-plane.md)
 - [Phase 2 official-source ingestion](docs/architecture/phase-2-ingestion.md)
+- [Phase 3 repository intelligence](docs/architecture/phase-3-repository-intelligence.md)
+- [Phase 4 generation and sandbox verification](docs/architecture/phase-4-generation-and-sandbox.md)
 - [Current dashboard API handoff](frontend/frontend-handoff.md)
 - [Local development and contributor runbook](docs/LOCAL_DEVELOPMENT.md)
 

@@ -145,6 +145,9 @@ CREATE TABLE IF NOT EXISTS repositories (
     UNIQUE (workspace_id, full_name)
 );
 
+ALTER TABLE repositories ADD COLUMN IF NOT EXISTS clone_url TEXT;
+ALTER TABLE repositories ADD COLUMN IF NOT EXISTS installation_id BIGINT;
+
 CREATE TABLE IF NOT EXISTS change_events (
     id TEXT NOT NULL,
     workspace_id TEXT NOT NULL REFERENCES workspaces(id),
@@ -174,6 +177,45 @@ CREATE TABLE IF NOT EXISTS impact_assessments (
     PRIMARY KEY (workspace_id, id),
     UNIQUE (workspace_id, change_event_id, repository_id, snapshot_digest)
 );
+
+CREATE TABLE IF NOT EXISTS repository_snapshots (
+    id TEXT NOT NULL,
+    workspace_id TEXT NOT NULL REFERENCES workspaces(id),
+    repository_id TEXT NOT NULL,
+    commit_sha TEXT NOT NULL CHECK (commit_sha ~ '^[a-fA-F0-9]{40}$'),
+    content_digest TEXT NOT NULL,
+    inventory_digest TEXT NOT NULL,
+    inventory_version TEXT NOT NULL,
+    inventory JSONB NOT NULL,
+    data JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (workspace_id, id),
+    UNIQUE (workspace_id, repository_id, content_digest, inventory_digest)
+);
+
+CREATE TABLE IF NOT EXISTS repository_dependencies (
+    workspace_id TEXT NOT NULL REFERENCES workspaces(id),
+    snapshot_id TEXT NOT NULL,
+    dependency_id TEXT NOT NULL,
+    ecosystem TEXT NOT NULL,
+    package TEXT NOT NULL,
+    data JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (workspace_id, snapshot_id, dependency_id)
+);
+
+CREATE TABLE IF NOT EXISTS repository_call_sites (
+    workspace_id TEXT NOT NULL REFERENCES workspaces(id),
+    assessment_id TEXT NOT NULL,
+    call_site_id TEXT NOT NULL,
+    snapshot_id TEXT NOT NULL,
+    path TEXT NOT NULL,
+    data JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (workspace_id, assessment_id, call_site_id)
+);
+
+ALTER TABLE change_fanout_jobs ADD COLUMN IF NOT EXISTS error_code TEXT;
 
 CREATE TABLE IF NOT EXISTS migrations (
     id TEXT NOT NULL,
@@ -209,6 +251,21 @@ CREATE TABLE IF NOT EXISTS migration_attempts (
     PRIMARY KEY (workspace_id, id),
     UNIQUE (workspace_id, migration_id, number),
     UNIQUE (workspace_id, migration_id, idempotency_key)
+);
+
+CREATE TABLE IF NOT EXISTS migration_artifacts (
+    id TEXT NOT NULL,
+    workspace_id TEXT NOT NULL REFERENCES workspaces(id),
+    attempt_id TEXT NOT NULL,
+    kind TEXT NOT NULL,
+    sha256 TEXT NOT NULL CHECK (sha256 ~ '^[a-f0-9]{64}$'),
+    object_ref TEXT NOT NULL,
+    data JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (workspace_id, attempt_id, id),
+    FOREIGN KEY (workspace_id, attempt_id)
+        REFERENCES migration_attempts(workspace_id, id),
+    UNIQUE (workspace_id, attempt_id, kind, sha256)
 );
 
 CREATE TABLE IF NOT EXISTS developer_decisions (
@@ -260,8 +317,16 @@ CREATE INDEX IF NOT EXISTS source_sync_queue
 ON source_sync_requests (status, created_at);
 CREATE INDEX IF NOT EXISTS change_fanout_queue
 ON change_fanout_jobs (status, created_at);
+CREATE INDEX IF NOT EXISTS repository_snapshots_feed
+ON repository_snapshots (workspace_id, repository_id, created_at DESC, id);
+CREATE INDEX IF NOT EXISTS repository_dependencies_package
+ON repository_dependencies (workspace_id, ecosystem, package);
+CREATE INDEX IF NOT EXISTS impact_assessments_change_feed
+ON impact_assessments (workspace_id, change_event_id, created_at DESC, id);
 CREATE INDEX IF NOT EXISTS migrations_workspace_feed
 ON migrations (workspace_id, created_at DESC, id);
+CREATE INDEX IF NOT EXISTS migration_artifacts_attempt
+ON migration_artifacts (workspace_id, attempt_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS audit_events_workspace_feed
 ON audit_events (workspace_id, created_at DESC, id);
 """

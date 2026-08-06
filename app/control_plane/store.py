@@ -38,6 +38,8 @@ def ensure_workspace(session: dict) -> str:
                 "id": repository_id,
                 "full_name": repository["full_name"],
                 "default_branch": repository.get("default_branch", "main"),
+                "clone_url": repository.get("clone_url"),
+                "installation_id": repository.get("installation_id"),
                 "enabled": True,
                 "languages": [],
                 "providers": [],
@@ -45,13 +47,18 @@ def ensure_workspace(session: dict) -> str:
             }
             conn.execute(
                 """INSERT INTO repositories
-                   (id, workspace_id, full_name, visibility, default_branch, data)
-                   VALUES (%s, %s, %s, %s, %s, %s)
+                   (id, workspace_id, full_name, visibility, default_branch,
+                    clone_url, installation_id, data)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                    ON CONFLICT (workspace_id, full_name) DO UPDATE SET
                      visibility = EXCLUDED.visibility,
                      default_branch = EXCLUDED.default_branch,
+                     clone_url = EXCLUDED.clone_url,
+                     installation_id = EXCLUDED.installation_id,
                      data = repositories.data || jsonb_build_object(
-                       'updated_at', now(), 'default_branch', EXCLUDED.default_branch
+                       'updated_at', now(), 'default_branch', EXCLUDED.default_branch,
+                       'clone_url', EXCLUDED.clone_url,
+                       'installation_id', EXCLUDED.installation_id
                      ),
                      updated_at = now()""",
                 (
@@ -60,6 +67,8 @@ def ensure_workspace(session: dict) -> str:
                     repository["full_name"],
                     repository.get("visibility", "unknown"),
                     repository.get("default_branch", "main"),
+                    repository.get("clone_url"),
+                    repository.get("installation_id"),
                     json.dumps(repository_data),
                 ),
             )
@@ -227,6 +236,8 @@ def apply_developer_action(
                 "status": "created",
                 "recommendation": None,
                 "previous_attempt_id": previous_id,
+                "revision_reason": reason,
+                "developer_instructions": instructions,
                 "evidence": None,
                 "created_at": now.isoformat(),
                 "updated_at": now.isoformat(),

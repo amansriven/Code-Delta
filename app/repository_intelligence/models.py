@@ -79,6 +79,7 @@ class RepositorySnapshot(ContractModel):
     schema_version: Literal["1.0"] = "1.0"
     id: str
     repository_id: str
+    source_ref: str
     commit_sha: str
     content_digest: str
     inventory_digest: str
@@ -91,4 +92,3 @@ class RepositoryAnalysisResult(ContractModel):
     snapshot: RepositorySnapshot
     inventory: InventoryResult
     impact: ImpactEvidence
-

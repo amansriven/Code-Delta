@@ -22,8 +22,9 @@ make db-schema
 ```
 
 `make setup` creates `.venv`, installs the backend in editable mode with test
-dependencies, runs `npm ci` in `frontend/`, and creates `frontend/.env` if it
-does not exist. The default frontend API is the live Railway service:
+dependencies, runs `npm ci` in `frontend/` and `sandbox-worker/`, and creates
+`frontend/.env` if it does not exist. The default frontend API is the live
+Railway service:
 
 ```text
 NEXT_PUBLIC_DELTA_CODE_API_URL=https://web-production-e59907.up.railway.app
@@ -50,6 +51,11 @@ Terminal 2 — comparison worker:
 ```bash
 make worker
 ```
+
+The same worker also runs official-source synchronization, repository
+intelligence, and migration-generation jobs. Repository analysis checks out the
+GitHub default branch ephemerally. Generation checks out the exact stored
+snapshot commit, validates its digest, and removes the checkout after the job.
 
 Terminal 3 — dashboard:
 
@@ -79,6 +85,12 @@ export GITHUB_OAUTH_CLIENT_SECRET="..."
 export GITHUB_OAUTH_CALLBACK_URL="http://localhost:8000/auth/github/callback"
 export FRONTEND_URL="http://localhost:3000"
 export ARTIFACT_STORAGE_ROOT="$PWD/.delta-code-artifacts"
+export MIGRATION_INTELLIGENCE_URL="https://your-gateway.example"
+export MIGRATION_INTELLIGENCE_TOKEN="..."
+export SANDBOX_EXECUTOR_URL="https://your-sandbox-worker.example.workers.dev"
+export SANDBOX_EXECUTOR_TOKEN="..."
+# Enable only after the Phase 4 isolation checklist has passed.
+export SANDBOX_EXECUTION_ENABLED="true"
 ```
 
 Do not commit those values. Basic pages and the signed-out live-API state work
@@ -92,6 +104,9 @@ Private repository verification additionally requires the GitHub App to have
 read-only **Contents** permission. Install or update the app on the private
 repository, then use **Refresh repository access** in the dashboard settings
 to repeat GitHub authorization and refresh the session's repository list.
+The refreshed OAuth session records each repository's clone URL, default
+branch, and GitHub App installation id; existing sessions must be refreshed
+before Phase 3 jobs can check out those repositories.
 
 ## Test and build
 
@@ -107,6 +122,7 @@ Individual commands:
 make lint
 make test-backend
 make test-frontend
+make test-sandbox
 make build
 make health
 ```

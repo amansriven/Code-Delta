@@ -100,11 +100,17 @@ def test_repository_access_preserves_visibility(monkeypatch):
             "full_name": "acme/private-api",
             "private": True,
             "visibility": "private",
+            "clone_url": "https://github.com/acme/private-api.git",
+            "default_branch": "main",
+            "installation_id": 7,
         },
         {
             "full_name": "acme/public-api",
             "private": False,
             "visibility": "public",
+            "clone_url": "https://github.com/acme/public-api.git",
+            "default_branch": "main",
+            "installation_id": 7,
         },
     ]
     assert not any("/8/repositories" in url for url, _page in calls)

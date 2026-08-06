@@ -18,3 +18,6 @@ frontend/.DS_Store
 .vercel
 .env*
 .delta-code-artifacts/
+sandbox-worker/node_modules/
+sandbox-worker/dist/
+sandbox-worker/.dev.vars

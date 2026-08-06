@@ -7,9 +7,11 @@ from pydantic import BaseModel
 from app.control_plane import router as control_plane_router
 from app.db import get_connection, init_schema
 from app.ingestion import router as ingestion_router
+from app.migration_generation import router as migration_generation_router
 from app.oauth import FRONTEND_URL, get_session
 from app.oauth import router as oauth_router
 from app.procrastinate_app import procrastinate_app
+from app.repository_intelligence import router as repository_intelligence_router
 from app.tasks import run_comparison
 from app.webhook import router as webhook_router
 
@@ -18,6 +20,8 @@ app.include_router(webhook_router)
 app.include_router(oauth_router)
 app.include_router(control_plane_router)
 app.include_router(ingestion_router)
+app.include_router(repository_intelligence_router)
+app.include_router(migration_generation_router)
 
 allowed_origins = {
     FRONTEND_URL,

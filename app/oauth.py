@@ -102,6 +102,10 @@ def _fetch_repository_access(user_token: str) -> list[dict]:
                     "private": bool(repo.get("private")),
                     "visibility": repo.get("visibility")
                     or ("private" if repo.get("private") else "public"),
+                    "clone_url": repo.get("clone_url")
+                    or f"https://github.com/{full_name}.git",
+                    "default_branch": repo.get("default_branch") or "main",
+                    "installation_id": installation["id"],
                 }
             if len(batch) < 100:
                 break

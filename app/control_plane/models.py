@@ -429,6 +429,10 @@ class DeveloperActionRequest(ContractModel):
     snooze_until: datetime | None = None
 
 
+class GenerateMigrationRequest(ContractModel):
+    expected_version: int = Field(ge=1)
+
+
 class AuditEvent(ContractModel):
     id: str
     actor: str

@@ -12,9 +12,15 @@ from app.github_client import get_installation_token
 from app.repo_fetch import fetch_ref
 from app.repository_intelligence.models import RepositoryRef, RepositoryWorkspace
 
-
 IGNORED_DIRECTORIES = {
-    ".git", ".venv", "node_modules", "vendor", "dist", "build", "__pycache__", ".next"
+    ".git",
+    ".venv",
+    "node_modules",
+    "vendor",
+    "dist",
+    "build",
+    "__pycache__",
+    ".next",
 }
 
 
@@ -122,7 +128,9 @@ class GitRepositoryWorkspaceProvider:
                 capture_output=True,
                 text=True,
             ).stdout.strip()
-            if len(commit_sha) != 40 or any(character not in "0123456789abcdef" for character in commit_sha):
+            if len(commit_sha) != 40 or any(
+                character not in "0123456789abcdef" for character in commit_sha
+            ):
                 raise WorkspacePolicyError("Git returned an invalid commit SHA")
             digest, file_count, size_bytes, symlink_count = workspace_fingerprint(root)
             return RepositoryWorkspace(

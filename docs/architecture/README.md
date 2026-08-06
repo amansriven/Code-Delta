@@ -3,9 +3,10 @@
 This directory defines the product and technical contracts for Delta Code's
 evolution into an API change-management and migration platform.
 
-Phase 0 established the contracts. Phase 1 now implements the provider-neutral
-control plane that those contracts require while preserving the legacy
-verification workflow.
+Phase 0 established the contracts. Phases 1–4 now implement the
+provider-neutral control plane, official-source ingestion, and deterministic
+repository intelligence, plus guarded generation and sandbox verification,
+while preserving the legacy verification workflow.
 
 ## Phase 0 documents
 
@@ -44,12 +45,31 @@ verification workflow.
 - `app/ingestion/` — the source contracts, security policy, storage backend,
   adapters, orchestration service, durable task, API, and PostgreSQL repository.
 
+## Phase 3 implementation
+
+- [Repository intelligence](phase-3-repository-intelligence.md) — immutable
+  workspaces and snapshots, dependency inventory, Python AST call sites,
+  explicit coverage outcomes, durable fan-out, and affected migrations.
+- `app/repository_intelligence/` — safe Git workspace acquisition,
+  deterministic inventory and analyzer services, worker tasks, persistence,
+  and authenticated read APIs.
+
+## Phase 4 implementation
+
+- [Migration generation and sandbox verification](phase-4-generation-and-sandbox.md)
+  — bounded model context, structured patch policy, immutable attempt evidence,
+  Cloudflare Sandbox execution, security gates, and operations.
+- `app/migration_generation/` — generation contracts, context assembly, patch
+  policy, model/executor boundaries, durable orchestration, and authenticated API.
+- `sandbox-worker/` — the independently deployable, deny-by-default command
+  execution boundary.
+
 ## Decision status
 
 The product direction and architectural boundaries are accepted. Provider
-selection, the production sandbox vendor, and initial language coverage remain
-explicit implementation decisions. No provider-specific decision may weaken
-the common contracts defined here.
+selection and initial language coverage remain explicit implementation
+decisions. Cloudflare Sandbox is the selected Phase 4 execution boundary. No
+provider-specific decision may weaken the common contracts defined here.
 
 ## Phase 0 exit criteria
 

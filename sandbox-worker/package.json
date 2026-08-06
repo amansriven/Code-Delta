@@ -1,0 +1,24 @@
+{
+  "name": "delta-code-sandbox-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "check": "WRANGLER_WRITE_LOGS=false wrangler types --check && tsc --noEmit",
+    "test": "tsc && node --test dist/test/*.test.js",
+    "types": "WRANGLER_WRITE_LOGS=false wrangler types",
+    "deploy:dry-run": "WRANGLER_WRITE_LOGS=false wrangler deploy --dry-run"
+  },
+  "dependencies": {
+    "@cloudflare/sandbox": "0.12.4"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.2",
+    "typescript": "5.9.3",
+    "wrangler": "4.119.0"
+  },
+  "overrides": {
+    "undici": "7.29.0"
+  }
+}

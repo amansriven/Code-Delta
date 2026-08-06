@@ -10,15 +10,15 @@ VERCEL_SCOPE ?=
 
 .DEFAULT_GOAL := help
 
-.PHONY: help setup backend-setup frontend-setup frontend-env \
+.PHONY: help setup backend-setup frontend-setup frontend-env sandbox-setup \
 	db-up db-down db-logs db-schema api worker frontend-dev frontend-start \
-	lint test test-backend test-frontend build health health-live \
+	lint test test-backend test-frontend test-sandbox build health health-live \
 	deploy deploy-backend deploy-web deploy-worker deploy-frontend
 
 help:
 	@echo "Delta Code development commands"
 	@echo ""
-	@echo "  make setup             Install backend and frontend dependencies"
+	@echo "  make setup             Install backend, frontend, and sandbox dependencies"
 	@echo "  make db-up             Start local PostgreSQL"
 	@echo "  make db-schema         Apply the Procrastinate database schema"
 	@echo "  make api               Run the FastAPI server on :8000"
@@ -26,6 +26,7 @@ help:
 	@echo "  make frontend-dev      Run Next.js on :3000 against LIVE_API_URL"
 	@echo "  make lint              Lint backend and frontend"
 	@echo "  make test              Run every backend and frontend check"
+	@echo "  make test-sandbox      Type-check and test the Sandbox Worker"
 	@echo "  make build             Build the production frontend"
 	@echo "  make health            Check the local backend health endpoint"
 	@echo "  make health-live       Check the hosted backend health endpoint"
@@ -33,7 +34,7 @@ help:
 	@echo "  make deploy-frontend   Deploy the frontend to Vercel production"
 	@echo "  make deploy            Deploy backend and frontend"
 
-setup: backend-setup frontend-setup frontend-env
+setup: backend-setup frontend-setup frontend-env sandbox-setup
 
 backend-setup:
 	python3 -m venv .venv
@@ -41,6 +42,9 @@ backend-setup:
 
 frontend-setup:
 	cd frontend && npm ci
+
+sandbox-setup:
+	cd sandbox-worker && npm ci
 
 frontend-env:
 	@test -f frontend/.env || { \
@@ -76,13 +80,16 @@ lint:
 	$(PYTHON) -m ruff check app tests
 	cd frontend && npm run lint
 
-test: lint test-backend test-frontend
+test: lint test-backend test-frontend test-sandbox
 
 test-backend:
 	$(PYTHON) -m pytest -q
 
 test-frontend:
 	cd frontend && npm test
+
+test-sandbox:
+	cd sandbox-worker && npm test && npm run check
 
 build:
 	cd frontend && npm run build
