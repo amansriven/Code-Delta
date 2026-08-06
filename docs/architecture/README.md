@@ -3,10 +3,11 @@
 This directory defines the product and technical contracts for Delta Code's
 evolution into an API change-management and migration platform.
 
-Phase 0 established the contracts. Phases 1–5 now implement the
+Phase 0 established the contracts. Phases 1–6 now implement the
 provider-neutral control plane, official-source ingestion, and deterministic
 repository intelligence, plus guarded generation and sandbox verification,
-while preserving the legacy verification workflow.
+GitHub publishing, and the migration review experience while preserving the
+legacy verification workflow.
 
 ## Phase 0 documents
 
@@ -71,6 +72,16 @@ while preserving the legacy verification workflow.
   decision synchronization, permission verification, and the write gate.
 - `app/github_publishing/` — publisher contracts, artifact reconstruction,
   GitHub API boundary, durable checkpoints, orchestration, and authenticated API.
+
+## Phase 6 implementation
+
+- [Migration inbox](phase-6-migration-inbox.md) — authenticated information
+  architecture, live progress, evidence and attempt review, developer actions,
+  preview fixtures, accessibility, and responsive behavior.
+- `frontend/app/MigrationWorkspace.tsx` — inbox, migration detail, normalized
+  change detail, provider overview, and secured action forms.
+- `frontend/app/lib/migrations.ts` — typed Phase 1–5 API client and explicitly
+  labeled preview data.
 
 ## Decision status
 

@@ -130,15 +130,19 @@ Delta Code reports directly on the pull request as a GitHub Check. Reviewers
 can see whether verification passed, failed, or reproduced behavioral changes
 without leaving the workflow where the code is being reviewed.
 
-### Workspace overview
+### Migration inbox
 
-The dashboard summarizes:
+The authenticated product now leads with provider-driven migration work:
 
-- repositories available through the GitHub App;
-- active and recently completed runs;
-- repository health;
-- recent pass rate and regression activity;
-- verification history across the workspace.
+- provider change, affected repository, risk, and effective date;
+- generation, verification, and draft-PR progress;
+- affected call sites, coverage, plan, changed files, and test intent;
+- deterministic check results, automated review, and unresolved uncertainty;
+- immutable attempts and developer revision instructions;
+- approve, revise, snooze, decline, retry, and publish actions.
+
+The previous workspace overview and base-versus-head run evidence remain
+available as legacy verification views.
 
 ### Run evidence
 
@@ -193,6 +197,9 @@ evidence, reduced-motion support, and responsive layouts.
 - Phase 5 exact-patch GitHub commits, owned branches, draft pull requests,
   Check Runs, revision synchronization, and developer-controlled ready/close
   actions behind an explicit write gate.
+- Phase 6 migration inbox with cursor paging, filters, normalized change and
+  repository evidence, attempt history, live progress, and secured developer
+  actions.
 
 ## Who Delta Code is for
 
@@ -268,6 +275,7 @@ boundaries live in [the architecture directory](docs/architecture/README.md).
 - [Phase 3 repository intelligence](docs/architecture/phase-3-repository-intelligence.md)
 - [Phase 4 generation and sandbox verification](docs/architecture/phase-4-generation-and-sandbox.md)
 - [Phase 5 GitHub publishing](docs/architecture/phase-5-github-publishing.md)
+- [Phase 6 migration inbox](docs/architecture/phase-6-migration-inbox.md)
 - [Current dashboard API handoff](frontend/frontend-handoff.md)
 - [Local development and contributor runbook](docs/LOCAL_DEVELOPMENT.md)
 

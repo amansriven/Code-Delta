@@ -83,7 +83,7 @@ test("server-renders the Delta Code landing page", async () => {
   assert.match(html, /Ship API changes/);
   assert.match(html, /without the guesswork/);
   assert.match(html, /Everything you need to review API behavior/);
-  assert.match(html, /auth\/github\/login\?redirect_uri=%2Foverview/);
+  assert.match(html, /auth\/github\/login\?redirect_uri=%2Fmigrations/);
   assert.doesNotMatch(html, /codex-preview/);
   assert.doesNotMatch(html, /react-loading-skeleton/);
 });
@@ -150,6 +150,32 @@ test("server-renders the complete authenticated product routes", async () => {
   assert.match(settings, /Settings sections/);
   assert.match(settings, /Account/);
   assert.match(settings, /Loading settings|Sign in required/);
+});
+
+test("server-renders the migration inbox and review workflow", async () => {
+  const [inboxResponse, migrationResponse, changeResponse, providersResponse] = await Promise.all([
+    render("/migrations"),
+    render("/migrations/migration-checkout-source"),
+    render("/changes/change-payments-source"),
+    render("/providers"),
+  ]);
+  [inboxResponse, migrationResponse, changeResponse, providersResponse].forEach((response) => {
+    assert.equal(response.status, 200);
+  });
+
+  const [inbox, migration, change, providers] = await Promise.all([
+    inboxResponse.text(),
+    migrationResponse.text(),
+    changeResponse.text(),
+    providersResponse.text(),
+  ]);
+  assert.match(inbox, /Migration inbox/);
+  assert.match(inbox, /Repository migrations/);
+  assert.match(inbox, /Automation readiness/);
+  assert.match(migration, /Loading migration evidence|Charge requests must use payment_method/);
+  assert.match(change, /Loading normalized provider change|Normalized provider change/);
+  assert.match(providers, /Source operations/);
+  assert.match(providers, /Provider preview|Source health/);
 });
 
 test("starter preview implementation is removed", async () => {

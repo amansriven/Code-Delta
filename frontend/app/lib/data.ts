@@ -230,7 +230,7 @@ export async function retryRun(
 
 const githubLoginBaseUrl = `${liveApiUrl}/auth/github/login`;
 export const githubLoginUrl =
-  `${githubLoginBaseUrl}?redirect_uri=${encodeURIComponent("/overview")}`;
+  `${githubLoginBaseUrl}?redirect_uri=${encodeURIComponent("/migrations")}`;
 export const githubRepositoryRefreshUrl =
   `${githubLoginBaseUrl}?redirect_uri=${encodeURIComponent("/settings/integrations")}`;
 

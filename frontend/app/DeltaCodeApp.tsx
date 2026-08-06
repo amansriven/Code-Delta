@@ -22,10 +22,16 @@ import {
   retryRun,
   signOut,
 } from "./lib/data";
+import {
+  ChangeDetailView,
+  MigrationDetailView,
+  MigrationInbox,
+  ProvidersOverview,
+} from "./MigrationWorkspace";
 
 const PRODUCT_NAME = "Delta Code";
 const GITHUB_INSTALL_URL = "https://github.com/apps/deltacodeapp/installations/new";
-type DashboardSection = "overview" | "runs" | "repositories" | "integrations" | "settings";
+type DashboardSection = "migrations" | "providers" | "overview" | "runs" | "repositories" | "integrations" | "settings";
 type ThemePreference = "light" | "dark";
 
 const dashboardNavigation: Array<{
@@ -36,15 +42,29 @@ const dashboardNavigation: Array<{
   description: string;
 }> = [
   {
+    section: "migrations",
+    label: "Migration inbox",
+    href: "/migrations",
+    icon: "△",
+    description: "Provider changes and developer decisions",
+  },
+  {
+    section: "providers",
+    label: "Providers",
+    href: "/providers",
+    icon: "⌁",
+    description: "Source health and change coverage",
+  },
+  {
     section: "overview",
-    label: "Overview",
+    label: "Verifier overview",
     href: "/overview",
     icon: "◇",
     description: "Workspace health and recent activity",
   },
   {
     section: "runs",
-    label: "Runs",
+    label: "Verification runs",
     href: "/runs",
     icon: "≋",
     description: "API verification history",
@@ -448,6 +468,42 @@ function AppHeader({ active }: { active: DashboardSection }) {
         </div>
       )}
     </>
+  );
+}
+
+function MigrationInboxPage() {
+  return (
+    <main className="dashboard-page">
+      <AppHeader active="migrations" />
+      <MigrationInbox />
+    </main>
+  );
+}
+
+function MigrationPage({ migrationId }: { migrationId: string }) {
+  return (
+    <main className="dashboard-page">
+      <AppHeader active="migrations" />
+      <MigrationDetailView migrationId={migrationId} />
+    </main>
+  );
+}
+
+function ChangePage({ changeId }: { changeId: string }) {
+  return (
+    <main className="dashboard-page">
+      <AppHeader active="migrations" />
+      <ChangeDetailView changeId={changeId} />
+    </main>
+  );
+}
+
+function ProvidersPage() {
+  return (
+    <main className="dashboard-page">
+      <AppHeader active="providers" />
+      <ProvidersOverview />
+    </main>
   );
 }
 
@@ -2666,10 +2722,16 @@ export default function DeltaCodeApp({ route }: { route: string[] }) {
   else if (path === "security") page = <SecurityPage />;
   else if (path === "login") page = <LoginPage />;
   else if (path === "onboarding") page = <OnboardingPage />;
+  else if (path === "migrations") page = <MigrationInboxPage />;
+  else if (path === "providers") page = <ProvidersPage />;
   else if (path === "overview") page = <OverviewPage />;
   else if (path === "runs") page = <RunsPage />;
   else if (path === "repositories") page = <RepositoriesPage />;
-  if (path.startsWith("runs/")) {
+  if (path.startsWith("migrations/")) {
+    page = <MigrationPage migrationId={path.split("/")[1]} />;
+  } else if (path.startsWith("changes/")) {
+    page = <ChangePage changeId={path.split("/")[1]} />;
+  } else if (path.startsWith("runs/")) {
     page = <RunDetailPage runId={Number(path.split("/")[1])} />;
   } else if (path === "settings" || path === "settings/account") {
     page = <SettingsPage tab="account" />;

@@ -98,6 +98,13 @@ export GITHUB_PUBLISHING_ENABLED="true"
 Do not commit those values. Basic pages and the signed-out live-API state work
 without GitHub credentials.
 
+The authenticated dashboard opens at `/migrations`. With
+`NEXT_PUBLIC_DELTA_CODE_API_URL` unset it uses clearly labeled preview
+migrations; with a configured API, failed authenticated requests stay visible
+as errors and are never replaced with preview data. State-changing migration
+actions also require `FRONTEND_URL` to match the browser origin because that
+origin is the session-cookie CSRF boundary.
+
 `ARTIFACT_STORAGE_ROOT` holds immutable Phase 2 source captures and Phase 4
 patch artifacts. The local path is ignored by Git. Hosted ingestion and
 publishing require an encrypted persistent volume; an ephemeral path is
