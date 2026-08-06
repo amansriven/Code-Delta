@@ -78,10 +78,15 @@ export GITHUB_OAUTH_CLIENT_ID="..."
 export GITHUB_OAUTH_CLIENT_SECRET="..."
 export GITHUB_OAUTH_CALLBACK_URL="http://localhost:8000/auth/github/callback"
 export FRONTEND_URL="http://localhost:3000"
+export ARTIFACT_STORAGE_ROOT="$PWD/.delta-code-artifacts"
 ```
 
 Do not commit those values. Basic pages and the signed-out live-API state work
 without GitHub credentials.
+
+`ARTIFACT_STORAGE_ROOT` holds immutable Phase 2 source captures. The local path
+is ignored by Git. Hosted ingestion requires an encrypted persistent volume;
+the worker's `/tmp` fallback is suitable only for tests and local evaluation.
 
 Private repository verification additionally requires the GitHub App to have
 read-only **Contents** permission. Install or update the app on the private

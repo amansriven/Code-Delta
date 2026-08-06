@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from app.control_plane import router as control_plane_router
 from app.db import get_connection, init_schema
+from app.ingestion import router as ingestion_router
 from app.oauth import FRONTEND_URL, get_session
 from app.oauth import router as oauth_router
 from app.procrastinate_app import procrastinate_app
@@ -16,6 +17,7 @@ app = FastAPI(title="Delta Code")
 app.include_router(webhook_router)
 app.include_router(oauth_router)
 app.include_router(control_plane_router)
+app.include_router(ingestion_router)
 
 allowed_origins = {
     FRONTEND_URL,

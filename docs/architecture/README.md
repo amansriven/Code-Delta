@@ -35,6 +35,15 @@ verification workflow.
 - `app/control_plane/store.py` and `router.py` — workspace-scoped PostgreSQL
   persistence and authenticated APIs.
 
+## Phase 2 implementation
+
+- [Official-source ingestion](phase-2-ingestion.md) — collectors, immutable
+  captures, normalization, provenance, source health, and repository fan-out.
+- [Artifact storage decision](decisions/0001-artifact-storage.md) — the initial
+  content-addressed backend and retention policy.
+- `app/ingestion/` — the source contracts, security policy, storage backend,
+  adapters, orchestration service, durable task, API, and PostgreSQL repository.
+
 ## Decision status
 
 The product direction and architectural boundaries are accepted. Provider

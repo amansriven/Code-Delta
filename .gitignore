@@ -17,3 +17,4 @@ frontend/*.pem
 frontend/.DS_Store
 .vercel
 .env*
+.delta-code-artifacts/

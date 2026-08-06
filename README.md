@@ -182,6 +182,9 @@ evidence, reduced-motion support, and responsive layouts.
 - Deterministic operation when no model is available.
 - Provider-neutral Phase 1 control-plane contracts, lifecycle persistence,
   cursor APIs, idempotent developer actions, and audit events.
+- Phase 2 official-source ingestion with SSRF controls, immutable artifact
+  capture, OpenAPI and structured-release normalization, provenance, health,
+  deduplication, and repository fan-out.
 
 ## Who Delta Code is for
 
@@ -251,6 +254,7 @@ boundaries live in [the architecture directory](docs/architecture/README.md).
 - [API migration product RFC](docs/architecture/phase-0-rfc.md)
 - [Architecture contracts](docs/architecture/README.md)
 - [Phase 1 control-plane implementation](docs/architecture/phase-1-control-plane.md)
+- [Phase 2 official-source ingestion](docs/architecture/phase-2-ingestion.md)
 - [Current dashboard API handoff](frontend/frontend-handoff.md)
 - [Local development and contributor runbook](docs/LOCAL_DEVELOPMENT.md)
 

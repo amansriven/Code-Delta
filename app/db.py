@@ -58,6 +58,79 @@ CREATE TABLE IF NOT EXISTS providers (
     PRIMARY KEY (workspace_id, id)
 );
 
+CREATE TABLE IF NOT EXISTS provider_sources (
+    id TEXT NOT NULL,
+    workspace_id TEXT NOT NULL REFERENCES workspaces(id),
+    provider_id TEXT NOT NULL,
+    source_type TEXT NOT NULL,
+    canonical_url TEXT NOT NULL,
+    official_domains JSONB NOT NULL,
+    adapter_id TEXT NOT NULL,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    max_artifact_bytes INTEGER NOT NULL DEFAULT 5000000,
+    retention_days INTEGER NOT NULL DEFAULT 90,
+    status TEXT NOT NULL DEFAULT 'never_synced',
+    consecutive_failures INTEGER NOT NULL DEFAULT 0,
+    last_attempt_at TIMESTAMPTZ,
+    last_success_at TIMESTAMPTZ,
+    last_error_code TEXT,
+    current_artifact_id TEXT,
+    etag TEXT,
+    last_modified TEXT,
+    data JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (workspace_id, id),
+    UNIQUE (workspace_id, provider_id, canonical_url)
+);
+
+CREATE TABLE IF NOT EXISTS source_artifacts (
+    id TEXT NOT NULL,
+    workspace_id TEXT NOT NULL REFERENCES workspaces(id),
+    source_id TEXT NOT NULL,
+    sha256 TEXT NOT NULL CHECK (sha256 ~ '^[a-f0-9]{64}$'),
+    object_ref TEXT NOT NULL,
+    data JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    expires_at TIMESTAMPTZ,
+    PRIMARY KEY (workspace_id, id),
+    UNIQUE (workspace_id, source_id, sha256)
+);
+
+CREATE TABLE IF NOT EXISTS source_sync_requests (
+    workspace_id TEXT NOT NULL REFERENCES workspaces(id),
+    source_id TEXT NOT NULL,
+    idempotency_key TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'queued',
+    error_code TEXT,
+    result JSONB,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (workspace_id, source_id, idempotency_key)
+);
+
+CREATE TABLE IF NOT EXISTS change_evidence (
+    workspace_id TEXT NOT NULL REFERENCES workspaces(id),
+    change_event_id TEXT NOT NULL,
+    artifact_id TEXT NOT NULL,
+    provenance TEXT NOT NULL,
+    locator TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (workspace_id, change_event_id, artifact_id)
+);
+
+CREATE TABLE IF NOT EXISTS change_fanout_jobs (
+    id TEXT NOT NULL,
+    workspace_id TEXT NOT NULL REFERENCES workspaces(id),
+    change_event_id TEXT NOT NULL,
+    repository_id TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'queued',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (workspace_id, id),
+    UNIQUE (workspace_id, change_event_id, repository_id)
+);
+
 CREATE TABLE IF NOT EXISTS repositories (
     id TEXT NOT NULL,
     workspace_id TEXT NOT NULL REFERENCES workspaces(id),
@@ -179,6 +252,14 @@ ADD COLUMN IF NOT EXISTS request_hash TEXT NOT NULL DEFAULT '';
 
 CREATE INDEX IF NOT EXISTS change_events_workspace_feed
 ON change_events (workspace_id, created_at DESC, id);
+CREATE INDEX IF NOT EXISTS provider_sources_workspace_feed
+ON provider_sources (workspace_id, created_at DESC, id);
+CREATE INDEX IF NOT EXISTS source_artifacts_retention
+ON source_artifacts (expires_at) WHERE expires_at IS NOT NULL;
+CREATE INDEX IF NOT EXISTS source_sync_queue
+ON source_sync_requests (status, created_at);
+CREATE INDEX IF NOT EXISTS change_fanout_queue
+ON change_fanout_jobs (status, created_at);
 CREATE INDEX IF NOT EXISTS migrations_workspace_feed
 ON migrations (workspace_id, created_at DESC, id);
 CREATE INDEX IF NOT EXISTS audit_events_workspace_feed
