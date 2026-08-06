@@ -2,7 +2,10 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from app.control_plane.models import NormalizedChange
-from app.repository_intelligence.analyzer import PythonAstImpactAnalyzer
+from app.repository_intelligence.analyzer import (
+    MultiLanguageImpactAnalyzer,
+    PythonAstImpactAnalyzer,
+)
 from app.repository_intelligence.inventory import RepositoryInventoryBuilder
 from app.repository_intelligence.models import RepositoryRef, RepositoryWorkspace
 from app.repository_intelligence.service import RepositoryIntelligenceService
@@ -199,3 +202,47 @@ def test_service_snapshot_identity_is_stable_for_same_immutable_input(tmp_path: 
     assert first.snapshot.id == second.snapshot.id
     assert first.snapshot.inventory_digest == second.snapshot.inventory_digest
     assert first.impact.assessment_id == second.impact.assessment_id
+
+
+def test_multilanguage_analyzer_finds_typescript_symbol_endpoint_and_field(tmp_path: Path):
+    (tmp_path / "client.ts").write_text(
+        "const client = new Client();\n"
+        "client.send('/v1/legacy', { old_field: value });\n"
+    )
+    repo_workspace = workspace(tmp_path)
+    inventory = RepositoryInventoryBuilder().build(repo_workspace)
+    provider_change = change(
+        {"kind": "symbol", "name": "Client.send"},
+        {"kind": "endpoint", "name": "/v1/legacy", "operation": "POST"},
+        {"kind": "field", "name": "old_field"},
+    )
+
+    result = MultiLanguageImpactAnalyzer().analyze(
+        repository(), repo_workspace, inventory, provider_change
+    )
+
+    assert result.conclusion == "affected"
+    assert {item.target for item in result.call_sites} == {
+        "Client.send",
+        "/v1/legacy",
+        "old_field",
+    }
+    assert all(item.language == "TypeScript" for item in result.call_sites)
+    assert all(item.detection_method == "text_heuristic" for item in result.call_sites)
+
+
+def test_multilanguage_negative_typescript_result_remains_uncertain(tmp_path: Path):
+    (tmp_path / "client.ts").write_text("export const safe = true;\n")
+    repo_workspace = workspace(tmp_path)
+    inventory = RepositoryInventoryBuilder().build(repo_workspace)
+
+    result = MultiLanguageImpactAnalyzer().analyze(
+        repository(),
+        repo_workspace,
+        inventory,
+        change({"kind": "symbol", "name": "Client.send"}),
+    )
+
+    assert result.conclusion == "uncertain"
+    assert result.coverage.supported is False
+    assert any("negative results" in item for item in result.coverage.limitations)

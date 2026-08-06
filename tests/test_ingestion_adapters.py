@@ -2,7 +2,12 @@ import hashlib
 import json
 from datetime import UTC, datetime
 
-from app.ingestion.adapters import OpenAPIAdapter, StructuredReleaseAdapter
+from app.ingestion.adapters import (
+    DEFAULT_ADAPTERS,
+    OfficialJsonFeedAdapter,
+    OpenAPIAdapter,
+    StructuredReleaseAdapter,
+)
 from app.ingestion.models import CapturedArtifact, ProviderSource
 
 
@@ -125,3 +130,31 @@ def test_structured_release_preserves_provider_stated_provenance_and_stable_dedu
     assert change.dedupe_key == "example:sdk-v5-send-removed"
     assert change.claims[0].provenance == "provider_stated"
     assert change.confidence.unresolved
+
+
+def test_official_json_feed_supports_changelog_source_without_upgrading_provenance():
+    document = {
+        "changes": [
+            {
+                "key": "auth-audience-required",
+                "change_type": "authentication_changed",
+                "severity": "critical",
+                "breaking": True,
+                "summary": "Machine tokens require an audience.",
+                "targets": [{"kind": "authentication", "name": "audience"}],
+                "locator": "Authentication changes",
+            }
+        ]
+    }
+    content = json.dumps(document).encode()
+    configured = source("changelog", "official-json-feed.v1")
+
+    change = OfficialJsonFeedAdapter().normalize(
+        configured, None, (artifact("changelog", content), content)
+    )[0]
+
+    assert change.change_type == "authentication_changed"
+    assert change.source_artifacts[0].source_type == "changelog"
+    assert change.claims[0].provenance == "provider_stated"
+    assert change.confidence.basis == "inferred"
+    assert "official-json-feed.v1" in DEFAULT_ADAPTERS

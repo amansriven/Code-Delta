@@ -3,6 +3,7 @@
 import os
 from pathlib import Path
 
+from app.hardening.metrics import JobObservation
 from app.ingestion.storage import FilesystemArtifactStore
 from app.procrastinate_app import procrastinate_app
 
@@ -18,9 +19,11 @@ from .store import (
 
 @procrastinate_app.task(name="publish_migration_draft")
 def publish_migration_draft(workspace_id: str, publication_id: str) -> None:
+    observation = JobObservation("publication")
     try:
         context = claim_publication(workspace_id, publication_id)
         if context is None:
+            observation.finish("skipped")
             return
         if os.environ.get("GITHUB_PUBLISHING_ENABLED", "").lower() != "true":
             raise PermissionError("github_publishing_disabled")
@@ -35,7 +38,9 @@ def publish_migration_draft(workspace_id: str, publication_id: str) -> None:
         publisher = GitHubPullRequestPublisher(GitHubInstallationCredentialBroker())
         result = publisher.publish(context, edits, DatabasePublicationProgress(context))
         complete_publication(context, result)
+        observation.finish("completed")
     except Exception as exc:
+        observation.finish("failed")
         error_code = getattr(exc, "code", None) or type(exc).__name__.lower()
         fail_publication(workspace_id, publication_id, str(error_code))
         raise

@@ -1,4 +1,5 @@
 import os
+from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -7,6 +8,7 @@ from pydantic import BaseModel
 from app.control_plane import router as control_plane_router
 from app.db import get_connection, init_schema
 from app.github_publishing import router as github_publishing_router
+from app.hardening.router import router as hardening_router
 from app.ingestion import router as ingestion_router
 from app.migration_generation import router as migration_generation_router
 from app.oauth import FRONTEND_URL, get_session
@@ -16,7 +18,18 @@ from app.repository_intelligence import router as repository_intelligence_router
 from app.tasks import run_comparison
 from app.webhook import router as webhook_router
 
-app = FastAPI(title="Delta Code")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    init_schema()
+    procrastinate_app.open()
+    try:
+        yield
+    finally:
+        procrastinate_app.close()
+
+
+app = FastAPI(title="Delta Code", lifespan=lifespan)
 app.include_router(webhook_router)
 app.include_router(oauth_router)
 app.include_router(control_plane_router)
@@ -24,6 +37,7 @@ app.include_router(ingestion_router)
 app.include_router(repository_intelligence_router)
 app.include_router(migration_generation_router)
 app.include_router(github_publishing_router)
+app.include_router(hardening_router)
 
 allowed_origins = {
     FRONTEND_URL,
@@ -49,17 +63,6 @@ app.add_middleware(
 def health() -> dict[str, str]:
     """Return a lightweight liveness signal for the web service."""
     return {"status": "ok"}
-
-
-@app.on_event("startup")
-def startup() -> None:
-    init_schema()
-    procrastinate_app.open()
-
-
-@app.on_event("shutdown")
-def shutdown() -> None:
-    procrastinate_app.close()
 
 
 class CreateRunRequest(BaseModel):

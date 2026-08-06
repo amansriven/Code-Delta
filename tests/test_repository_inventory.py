@@ -50,7 +50,8 @@ def test_inventory_reads_npm_manifest_and_lockfile_without_installing(tmp_path: 
         ("stripe", "lockfile"),
         ("vite", "manifest"),
     }
-    assert result.capabilities[0].supported is False
+    assert result.capabilities[0].supported is True
+    assert "TypeScript" in result.capabilities[0].languages
 
 
 def test_inventory_digest_is_stable_and_changes_with_inventory(tmp_path: Path):

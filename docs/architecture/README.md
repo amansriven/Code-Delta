@@ -3,7 +3,7 @@
 This directory defines the product and technical contracts for Delta Code's
 evolution into an API change-management and migration platform.
 
-Phase 0 established the contracts. Phases 1–6 now implement the
+Phase 0 established the contracts. Phases 1–7 now implement the
 provider-neutral control plane, official-source ingestion, and deterministic
 repository intelligence, plus guarded generation and sandbox verification,
 GitHub publishing, and the migration review experience while preserving the
@@ -82,6 +82,16 @@ legacy verification workflow.
   change detail, provider overview, and secured action forms.
 - `frontend/app/lib/migrations.ts` — typed Phase 1–5 API client and explicitly
   labeled preview data.
+
+## Phase 7 implementation
+
+- [Generalization and hardening](phase-7-generalization-and-hardening.md) —
+  official JSON feed support, conservative JavaScript/TypeScript analysis,
+  labeled benchmarks, resource budgets, operational telemetry, readiness, and
+  security review.
+- `app/hardening/` — generation limits, fixed-cardinality metrics, protected
+  operational endpoints, and the benchmark runner.
+- `benchmarks/repository-impact-v1.json` — versioned analyzer release-gate data.
 
 ## Decision status
 

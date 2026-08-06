@@ -276,3 +276,13 @@ Audit events are required for:
 - Abuse, quota, cost, and incident controls exist.
 - A documented response path can disable ingestion, execution, model calls, or
   GitHub writes independently.
+
+## Phase 7 review record
+
+The 2026-08-06 code-level review is recorded in
+[Phase 7: generalization and hardening](phase-7-generalization-and-hardening.md).
+The static-analysis, source-ingestion, context/patch policy, secured mutation,
+exact-publication, budget, metrics-authentication, and fail-closed feature-gate
+tests pass. Residual infrastructure and product risks remain explicit release
+conditions; this record is not a penetration test or sandbox-isolation
+certification.

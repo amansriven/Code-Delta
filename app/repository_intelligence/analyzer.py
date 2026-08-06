@@ -2,6 +2,7 @@
 
 import ast
 import hashlib
+import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -359,3 +360,203 @@ class PythonAstImpactAnalyzer:
                 reasons=["Parsed from a static Python AST node."],
             ),
         )
+
+
+class MultiLanguageImpactAnalyzer:
+    """Python semantic analysis plus conservative JavaScript/TypeScript evidence.
+
+    The lexical analyzer may prove a positive exact match, but it never certifies
+    a JavaScript or TypeScript repository as unaffected. Dynamic imports, aliases,
+    computed properties, generated clients, and type-only resolution remain
+    explicitly outside its coverage.
+    """
+
+    analyzer_id = "multilanguage-static"
+    analyzer_version = "1.0.0"
+    script_extensions = {".js", ".jsx", ".mjs", ".cjs", ".ts", ".tsx"}
+
+    def __init__(self) -> None:
+        self.python = PythonAstImpactAnalyzer()
+
+    def analyze(
+        self,
+        repository: RepositoryRef,
+        workspace: RepositoryWorkspace,
+        inventory: InventoryResult,
+        change: NormalizedChange,
+    ) -> ImpactEvidence:
+        assessment_id = _stable_id(
+            "impact", repository.id, change.id, workspace.content_digest, self.analyzer_version
+        )
+        python_result = self.python.analyze(repository, workspace, inventory, change)
+        call_sites = list(python_result.call_sites)
+        parse_failures = python_result.coverage.parse_failures
+        script_files = 0
+        script_excluded = 0
+        root = Path(workspace.root)
+
+        for relative, entry_type, value in sorted(_walk_entries(root), key=lambda item: item[0]):
+            if entry_type != "file" or value.suffix.lower() not in self.script_extensions:
+                continue
+            script_files += 1
+            if value.stat(follow_symlinks=False).st_size > MAX_ANALYSIS_FILE_BYTES:
+                script_excluded += 1
+                continue
+            try:
+                content = value.read_text(encoding="utf-8")
+            except (OSError, UnicodeDecodeError):
+                parse_failures += 1
+                continue
+            call_sites.extend(self._match_script(relative, content, change, assessment_id))
+
+        call_sites = sorted(
+            {item.id: item for item in call_sites}.values(),
+            key=lambda item: (item.path, item.start_line, item.end_line, item.id),
+        )
+        dependency_matches = self.python._dependency_matches(inventory, change)
+        observed_languages = {item.language for item in inventory.languages}
+        supported_languages = {"Python", "JavaScript", "TypeScript"}
+        unsupported_languages = sorted(observed_languages - supported_languages)
+        python_files = python_result.coverage.files_considered
+        exclusions = (
+            inventory.files_excluded + inventory.symlinks_excluded + script_excluded
+        )
+        limitations = [
+            "Python uses AST evidence; JavaScript and TypeScript use exact lexical evidence only.",
+            "JavaScript/TypeScript negative results are not authoritative because aliases, "
+            "computed properties, and generated code are unresolved.",
+        ]
+        if unsupported_languages:
+            limitations.append(
+                "No static analyzer is available for: " + ", ".join(unsupported_languages)
+            )
+        if parse_failures:
+            limitations.append(
+                f"{parse_failures} supported source file(s) could not be read or parsed."
+            )
+        if exclusions:
+            limitations.append(f"{exclusions} file(s) were excluded by repository policy.")
+        if inventory.warnings:
+            limitations.append(
+                f"Repository inventory reported {len(inventory.warnings)} warning(s)."
+            )
+
+        # Complete negative coverage is currently possible only for Python-only repositories.
+        complete_negative_coverage = bool(python_files) and not (
+            script_files
+            or unsupported_languages
+            or parse_failures
+            or exclusions
+            or inventory.warnings
+        )
+        coverage = Coverage(
+            supported=complete_negative_coverage,
+            languages=sorted(observed_languages),
+            files_considered=python_files + script_files,
+            files_excluded=exclusions,
+            parse_failures=parse_failures,
+            limitations=limitations,
+        )
+        if call_sites or dependency_matches:
+            conclusion = "affected"
+            summary = "Deterministic repository evidence matches this provider change."
+            score = 1.0 if not script_files else 0.9
+        elif not python_files and not script_files:
+            conclusion = "unsupported"
+            summary = "No supported Python, JavaScript, or TypeScript source files were found."
+            score = 1.0
+        elif complete_negative_coverage:
+            conclusion = "unaffected"
+            summary = "No target match was found under complete supported Python coverage."
+            score = 1.0
+        else:
+            conclusion = "uncertain"
+            summary = (
+                "No match was found, but analyzer coverage cannot prove the repository unaffected."
+            )
+            score = 0.5
+        return ImpactEvidence(
+            assessment_id=assessment_id,
+            conclusion=conclusion,
+            summary=summary,
+            dependency_matches=dependency_matches,
+            call_sites=call_sites,
+            coverage=coverage,
+            confidence=Confidence(
+                score=score,
+                basis=ConfidenceBasis.deterministic,
+                reasons=["Static AST, lexical, and manifest/lockfile evidence only."],
+                unresolved=[] if complete_negative_coverage else limitations[1:],
+            ),
+        )
+
+    def _match_script(
+        self,
+        path: str,
+        content: str,
+        change: NormalizedChange,
+        assessment_id: str,
+    ) -> list[CallSite]:
+        matches: list[CallSite] = []
+        language = "TypeScript" if Path(path).suffix.lower() in {".ts", ".tsx"} else "JavaScript"
+        for target in change.targets:
+            patterns: list[tuple[re.Pattern[str], str | None, str]] = []
+            escaped = re.escape(target.name)
+            if target.kind in {"symbol", "type"}:
+                parts = target.name.split(".")
+                if len(parts) > 1:
+                    receiver, member = re.escape(parts[-2]), re.escape(parts[-1])
+                    pattern = re.compile(rf"\b{receiver}\s*\.\s*{member}\s*\(", re.IGNORECASE)
+                else:
+                    pattern = re.compile(rf"\b{escaped}\s*\(")
+                patterns.append(
+                    (
+                        pattern,
+                        target.name,
+                        f"Exact lexical call matches changed {target.kind} {target.name}.",
+                    )
+                )
+            elif target.kind == "endpoint":
+                patterns.append(
+                    (
+                        re.compile(rf"(['\"]){escaped}\1"),
+                        None,
+                        f"Exact endpoint string matches {target.name}.",
+                    )
+                )
+            elif target.kind == "field":
+                patterns.append(
+                    (
+                        re.compile(rf"(?:\b{escaped}\b|(['\"]){escaped}\1)\s*:"),
+                        None,
+                        f"Static object field matches {target.name}.",
+                    )
+                )
+            for pattern, symbol, reason in patterns:
+                for match in pattern.finditer(content):
+                    line = content.count("\n", 0, match.start()) + 1
+                    matches.append(
+                        CallSite(
+                            id=_stable_id(
+                                "callsite", assessment_id, path, str(line), target.name, reason
+                            ),
+                            path=path,
+                            start_line=line,
+                            end_line=line,
+                            language=language,
+                            symbol=symbol,
+                            target=target.name,
+                            detection_method="text_heuristic",
+                            reason=reason,
+                            confidence=Confidence(
+                                score=0.85,
+                                basis=ConfidenceBasis.deterministic,
+                                reasons=[
+                                    "Matched an exact bounded lexical form without executing "
+                                    "repository code."
+                                ],
+                                unresolved=["The lexical match is not type-resolved."],
+                            ),
+                        )
+                    )
+        return matches

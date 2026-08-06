@@ -12,7 +12,7 @@ VERCEL_SCOPE ?=
 
 .PHONY: help setup backend-setup frontend-setup frontend-env sandbox-setup \
 	db-up db-down db-logs db-schema api worker frontend-dev frontend-start \
-	lint test test-backend test-frontend test-sandbox build health health-live \
+	lint test test-backend test-frontend test-sandbox benchmark build health health-live \
 	deploy deploy-backend deploy-web deploy-worker deploy-frontend
 
 help:
@@ -27,6 +27,7 @@ help:
 	@echo "  make lint              Lint backend and frontend"
 	@echo "  make test              Run every backend and frontend check"
 	@echo "  make test-sandbox      Type-check and test the Sandbox Worker"
+	@echo "  make benchmark         Run the labeled repository-impact release gate"
 	@echo "  make build             Build the production frontend"
 	@echo "  make health            Check the local backend health endpoint"
 	@echo "  make health-live       Check the hosted backend health endpoint"
@@ -80,7 +81,7 @@ lint:
 	$(PYTHON) -m ruff check app tests
 	cd frontend && npm run lint
 
-test: lint test-backend test-frontend test-sandbox
+test: lint test-backend test-frontend test-sandbox benchmark
 
 test-backend:
 	$(PYTHON) -m pytest -q
@@ -90,6 +91,9 @@ test-frontend:
 
 test-sandbox:
 	cd sandbox-worker && npm test && npm run check
+
+benchmark:
+	$(PYTHON) -m app.hardening.benchmark benchmarks/repository-impact-v1.json
 
 build:
 	cd frontend && npm run build

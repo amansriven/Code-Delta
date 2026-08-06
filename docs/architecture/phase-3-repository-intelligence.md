@@ -27,7 +27,7 @@ The implementation provides:
   ranges;
 - a Python AST analyzer for import aliases, constructor aliases, called
   symbols, exact endpoint constants, keyword arguments, and literal dictionary
-  fields;
+  fields, plus positive-only JavaScript/TypeScript lexical evidence;
 - explicit `affected`, `unaffected`, `uncertain`, and `unsupported` outcomes
   with file counts, parse failures, excluded files, unsupported languages,
   limitations, confidence, and stable call-site identifiers;
@@ -44,8 +44,8 @@ durable repository fan-out job
   -> validate repository identity and fetch requested branch
   -> resolve exact commit and hash bounded workspace
   -> inventory languages, manifests, lockfiles, and dependencies
-  -> parse supported Python files without importing or executing them
-  -> match normalized targets to dependencies and AST call sites
+  -> parse Python and scan bounded JavaScript/TypeScript without executing them
+  -> match normalized targets to dependencies and static call sites
   -> persist immutable snapshot and impact evidence atomically
   -> create one idempotent queued migration only when affected
   -> delete ephemeral checkout
@@ -60,9 +60,9 @@ against multiple provider events without changing its identity.
 | Conclusion | Meaning |
 | --- | --- |
 | `affected` | At least one deterministic manifest, lockfile, symbol, endpoint, or field match exists. |
-| `unaffected` | No target matched and every observed code language/file was covered by the supported Python analyzer. |
+| `unaffected` | No target matched and every observed code language/file was covered by the Python AST analyzer. |
 | `uncertain` | No target matched, but a parse/inventory warning, excluded file or link, or unsupported code language prevents a safe negative conclusion. |
-| `unsupported` | No supported Python source was available. |
+| `unsupported` | No supported Python, JavaScript, or TypeScript source was available. |
 | `failed` | Reserved by the evidence contract; infrastructure failures are currently recorded on the durable fan-out job with a safe error code. |
 
 `unaffected` is never produced from text search, model inference, partial
@@ -95,9 +95,10 @@ inventory warnings, task arguments, or analyzer inputs.
 
 ## Current limitations
 
-- Python is the only semantic language implementation. JavaScript,
-  TypeScript, Go, Java, Kotlin, Ruby, Rust, C#, and PHP are detected and produce
-  explicit partial or unsupported coverage.
+- Python is the only semantic language implementation. JavaScript and
+  TypeScript have deterministic positive-only lexical matching; a negative
+  scan remains uncertain. Go, Java, Kotlin, Ruby, Rust, C#, and PHP are detected
+  and produce explicit partial or unsupported coverage.
 - Dynamic dispatch, reflection, computed endpoints/field names, generated
   clients without ordinary Python syntax, and runtime dependency injection are
   not resolved.

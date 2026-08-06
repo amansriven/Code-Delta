@@ -29,6 +29,9 @@ The implementation provides:
   required inline JSON request fields;
 - a structurally different official structured-release adapter with explicit
   provider-stated provenance;
+- an official JSON feed adapter for provider changelogs, migration guides, and
+  SDK releases that preserves provider-stated provenance and rejects arbitrary
+  prose;
 - atomic artifact metadata, normalized event, evidence-link, source health,
   provider health, and repository fan-out persistence; and
 - tests for private/metadata addressing, host suffix attacks, redirect escape,

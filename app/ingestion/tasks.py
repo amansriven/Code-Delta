@@ -5,6 +5,7 @@ from pathlib import Path
 
 import httpx
 
+from app.hardening.metrics import JobObservation
 from app.ingestion.adapters import DEFAULT_ADAPTERS
 from app.ingestion.collector import HTTPSCollector
 from app.ingestion.service import IngestionService
@@ -19,6 +20,7 @@ from app.procrastinate_app import procrastinate_app
 
 @procrastinate_app.task(name="sync_provider_source")
 def sync_provider_source(workspace_id: str, source_id: str, idempotency_key: str) -> None:
+    observation = JobObservation("ingestion")
     source = load_source(workspace_id, source_id)
     mark_sync_status(workspace_id, source_id, idempotency_key, "running")
     storage_root = Path(os.environ.get("ARTIFACT_STORAGE_ROOT", "/tmp/delta-code-artifacts"))
@@ -40,6 +42,7 @@ def sync_provider_source(workspace_id: str, source_id: str, idempotency_key: str
             )
             result = service.sync(source, idempotency_key=idempotency_key)
     except Exception as exc:
+        observation.finish("failed")
         mark_sync_status(
             workspace_id,
             source_id,
@@ -55,6 +58,7 @@ def sync_provider_source(workspace_id: str, source_id: str, idempotency_key: str
         "completed",
         result=result.model_dump(mode="json"),
     )
+    observation.finish("completed")
     from app.repository_intelligence.tasks import enqueue_repository_analysis
 
     enqueue_repository_analysis.defer(

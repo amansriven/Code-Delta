@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "description": "Synthetic, provider-neutral positive and negative repository impact cases.",
+  "cases": [
+    {
+      "id": "python-symbol-affected",
+      "affected": true,
+      "files": {
+        "client.py": "from example_sdk import Client\nclient = Client()\nclient.send('hello')\n"
+      },
+      "targets": [{"kind": "symbol", "name": "Client.send"}]
+    },
+    {
+      "id": "python-symbol-unaffected",
+      "affected": false,
+      "files": {"client.py": "print('safe')\n"},
+      "targets": [{"kind": "symbol", "name": "Client.send"}]
+    },
+    {
+      "id": "typescript-symbol-affected",
+      "affected": true,
+      "files": {"src/client.ts": "const client = new Client();\nawait client.send({ value: 1 });\n"},
+      "targets": [{"kind": "symbol", "name": "Client.send"}]
+    },
+    {
+      "id": "javascript-endpoint-field-affected",
+      "affected": true,
+      "files": {"src/request.js": "fetch('/v1/legacy', { body: JSON.stringify({ old_field: value }) });\n"},
+      "targets": [
+        {"kind": "endpoint", "name": "/v1/legacy", "operation": "POST"},
+        {"kind": "field", "name": "old_field"}
+      ]
+    },
+    {
+      "id": "typescript-negative-uncertain",
+      "affected": false,
+      "files": {"src/client.ts": "export const value = 1;\n"},
+      "targets": [{"kind": "symbol", "name": "Client.send"}]
+    },
+    {
+      "id": "npm-dependency-affected",
+      "affected": true,
+      "files": {
+        "src/index.ts": "export const value = 1;\n",
+        "package.json": "{\"dependencies\":{\"example-sdk\":\"^5.0.0\"}}"
+      },
+      "targets": [{"kind": "sdk_package", "name": "example-sdk", "ecosystem": "npm"}]
+    },
+    {
+      "id": "unsupported-go-negative",
+      "affected": false,
+      "files": {"main.go": "package main\nfunc main() {}\n"},
+      "targets": [{"kind": "symbol", "name": "Client.send"}]
+    }
+  ]
+}

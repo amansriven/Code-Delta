@@ -269,7 +269,7 @@ class StructuredReleaseAdapter:
         document = _load_json(content)
         if not isinstance(document, dict) or not isinstance(document.get("changes"), list):
             raise AdapterError("structured release must contain a changes array")
-        artifact_ref = _source_artifact(artifact, "structured_release")
+        artifact_ref = _source_artifact(artifact, source.source_type)
         changes = []
         for entry in document["changes"]:
             if not isinstance(entry, dict):
@@ -342,7 +342,43 @@ class StructuredReleaseAdapter:
         return changes
 
 
+class OfficialJsonFeedAdapter(StructuredReleaseAdapter):
+    """Normalizes provider-owned JSON changelogs, guides, and SDK releases.
+
+    This adapter deliberately preserves provider-stated provenance. The feed is
+    authoritative because of its configured domain, not because Delta Code has
+    independently proven each statement.
+    """
+
+    adapter_id = "official-json-feed.v1"
+    adapter_version = "1.0.0"
+
+    def capabilities(self) -> AdapterCapabilities:
+        return AdapterCapabilities(
+            adapter_id=self.adapter_id,
+            adapter_version=self.adapter_version,
+            source_types=["changelog", "migration_guide", "sdk_release"],
+            deterministic_change_types=[],
+            provider_stated_change_types=[
+                "endpoint_added", "endpoint_removed", "endpoint_changed",
+                "request_field_added", "request_field_removed", "request_field_required",
+                "request_field_optional", "request_field_type_changed",
+                "response_field_added", "response_field_removed", "response_field_type_changed",
+                "authentication_changed", "behavior_changed", "sdk_symbol_added",
+                "sdk_symbol_removed", "sdk_symbol_changed", "sdk_release", "deprecation",
+                "feature", "security", "unknown",
+            ],
+            maximum_artifact_bytes=2_000_000,
+            known_blind_spots=[
+                "Provider-stated entries are not independently verified.",
+                "Only the versioned Delta Code JSON feed shape is accepted; "
+                "arbitrary prose is not parsed.",
+            ],
+        )
+
+
 DEFAULT_ADAPTERS: dict[str, SourceAdapter] = {
     OpenAPIAdapter.adapter_id: OpenAPIAdapter(),
     StructuredReleaseAdapter.adapter_id: StructuredReleaseAdapter(),
+    OfficialJsonFeedAdapter.adapter_id: OfficialJsonFeedAdapter(),
 }

@@ -93,6 +93,13 @@ export SANDBOX_EXECUTOR_TOKEN="..."
 export SANDBOX_EXECUTION_ENABLED="true"
 # Enable only after GitHub App write permissions are reauthorized and tested.
 export GITHUB_PUBLISHING_ENABLED="true"
+# Protect the aggregate Prometheus scrape endpoint with a separate credential.
+export METRICS_BEARER_TOKEN="..."
+# Optional per-attempt Phase 7 resource budgets (shown with defaults).
+export GENERATION_MAX_CONTEXT_BYTES="1500000"
+export GENERATION_MAX_PROPOSAL_BYTES="2500000"
+export GENERATION_MAX_CHECK_TIMEOUT_MS="600000"
+export GENERATION_MAX_SANDBOX_DURATION_MS="600000"
 ```
 
 Do not commit those values. Basic pages and the signed-out live-API state work
@@ -139,6 +146,7 @@ make lint
 make test-backend
 make test-frontend
 make test-sandbox
+make benchmark
 make build
 make health
 ```
@@ -146,6 +154,11 @@ make health
 The backend integration test starts temporary demo FastAPI servers on local
 ephemeral ports. If a restricted shell forbids local socket binding, run the
 test from a normal terminal.
+
+`GET /health` is the liveness endpoint. `GET /ready` checks PostgreSQL and
+reports optional feature-gate configuration without exposing secret values.
+`GET /metrics` requires `Authorization: Bearer $METRICS_BEARER_TOKEN` and
+returns only fixed-cardinality aggregate job outcomes and durations.
 
 ## Database operations
 

@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-  Delta Code is evolving into an API change-management platform that connects
+  Delta Code is an API change-management platform that connects
   official provider changes to affected code, verified migrations, and draft
   pull requests.
 </p>
@@ -51,24 +51,23 @@ The target workflow is:
 
 ## What Delta Code does today
 
-The current implementation is the evidence-producing foundation for that
-direction. It connects to GitHub and evaluates API behavior whenever a monitored
-pull request opens or changes.
+The implemented platform:
 
-It:
+1. captures configured official OpenAPI, structured release, changelog,
+   migration-guide, and SDK-release feeds;
+2. normalizes provider changes with immutable provenance;
+3. fans changes out across repository snapshots and PyPI/npm dependencies;
+4. locates Python AST and conservative JavaScript/TypeScript call-site evidence;
+5. creates independent migrations only for affected repositories;
+6. generates bounded plans, code changes, and tests through a model gateway;
+7. verifies the exact patch in an isolated, deny-network sandbox;
+8. records checks, review findings, uncertainty, resource cost, and attempts;
+9. opens evidence-rich draft pull requests without merging them; and
+10. presents the complete chain in an audited developer decision inbox.
 
-1. fetches the base and pull-request revisions;
-2. reads and compares their OpenAPI specifications;
-3. identifies the endpoints, fields, and parameters affected by the change;
-4. generates focused edge cases for that changed surface;
-5. starts both versions of the API;
-6. sends equivalent requests to each version;
-7. compares the observed responses;
-8. stores only meaningful behavioral differences;
-9. publishes the result as a GitHub Check;
-10. makes the evidence available in the Delta Code dashboard.
-
-The result is evidence a reviewer can inspect instead of a speculative warning.
+The original base-versus-pull-request OpenAPI verifier remains available as a
+GitHub Check and legacy dashboard view. Both workflows produce inspectable
+evidence instead of speculative warnings.
 
 ## What the evidence looks like
 
@@ -200,6 +199,9 @@ evidence, reduced-motion support, and responsive layouts.
 - Phase 6 migration inbox with cursor paging, filters, normalized change and
   repository evidence, attempt history, live progress, and secured developer
   actions.
+- Phase 7 official JSON source feeds, conservative JavaScript/TypeScript impact
+  evidence, labeled benchmark gates, per-attempt resource budgets, protected
+  metrics, dependency readiness, and a documented security review.
 
 ## Who Delta Code is for
 
@@ -215,7 +217,8 @@ Delta Code is designed for:
 
 The active MVP is intentionally focused. Target repositories should currently:
 
-- use Python and FastAPI;
+- use Python for complete semantic impact coverage, or JavaScript/TypeScript
+  where positive-only lexical evidence is sufficient;
 - expose a working OpenAPI specification;
 - have a predictable local startup path;
 - run without complex external infrastructure, or provide local substitutes.
@@ -249,13 +252,13 @@ flag is set after isolation testing.
 | Dashboard | React, Next.js, TypeScript, and custom CSS |
 | Optional AI enrichment | Ollama-compatible language models |
 
-## Product direction
+## Product architecture
 
-Delta Code is becoming a provider-independent API change-management and
-migration platform. It will monitor official API and SDK sources, normalize
-changes, identify affected repositories and call sites, generate code and tests,
-verify migrations in a sandbox, open draft pull requests, review its own work,
-and recommend approve, revise, snooze, or decline.
+Delta Code is a provider-independent API change-management and migration
+platform. It monitors official API and SDK sources, normalizes changes,
+identifies affected repositories and call sites, generates code and tests,
+verifies migrations in a sandbox, opens draft pull requests, reviews its work,
+and recommends approve, revise, snooze, or decline.
 
 LLMs will interpret ambiguous source material, understand repository context,
 generate migrations and tests, and explain uncertainty. Deterministic systems
@@ -276,6 +279,7 @@ boundaries live in [the architecture directory](docs/architecture/README.md).
 - [Phase 4 generation and sandbox verification](docs/architecture/phase-4-generation-and-sandbox.md)
 - [Phase 5 GitHub publishing](docs/architecture/phase-5-github-publishing.md)
 - [Phase 6 migration inbox](docs/architecture/phase-6-migration-inbox.md)
+- [Phase 7 generalization and hardening](docs/architecture/phase-7-generalization-and-hardening.md)
 - [Current dashboard API handoff](frontend/frontend-handoff.md)
 - [Local development and contributor runbook](docs/LOCAL_DEVELOPMENT.md)
 

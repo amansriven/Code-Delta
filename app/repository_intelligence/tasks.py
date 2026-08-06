@@ -1,5 +1,6 @@
 """Durable Phase 3 repository analysis jobs."""
 
+from app.hardening.metrics import JobObservation
 from app.procrastinate_app import procrastinate_app
 from app.repository_intelligence.service import RepositoryIntelligenceService
 from app.repository_intelligence.store import (
@@ -22,11 +23,13 @@ def enqueue_repository_analysis(workspace_id: str, change_event_ids: list[str]) 
 
 @procrastinate_app.task(name="analyze_repository_fanout")
 def analyze_repository_fanout(workspace_id: str, job_id: str) -> None:
+    observation = JobObservation("repository_analysis")
     workspace = None
     provider = GitRepositoryWorkspaceProvider(GitHubInstallationCredentialBroker())
     try:
         context = claim_fanout_job(workspace_id, job_id)
         if context is None:
+            observation.finish("skipped")
             return
         credential_handle = f"github-installation:{context.repository.installation_id}"
         workspace = provider.materialize(
@@ -38,7 +41,9 @@ def analyze_repository_fanout(workspace_id: str, job_id: str) -> None:
             context.repository, workspace, context.change
         )
         complete_fanout_job(context, result)
+        observation.finish("completed")
     except Exception as exc:
+        observation.finish("failed")
         error_code = getattr(exc, "code", None) or type(exc).__name__.lower()
         fail_fanout_job(workspace_id, job_id, str(error_code))
         raise

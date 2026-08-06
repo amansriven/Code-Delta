@@ -4,7 +4,7 @@ import uuid
 from datetime import UTC, datetime
 
 from app.control_plane.models import NormalizedChange
-from app.repository_intelligence.analyzer import PythonAstImpactAnalyzer
+from app.repository_intelligence.analyzer import MultiLanguageImpactAnalyzer
 from app.repository_intelligence.inventory import RepositoryInventoryBuilder
 from app.repository_intelligence.models import (
     RepositoryAnalysisResult,
@@ -18,10 +18,10 @@ class RepositoryIntelligenceService:
     def __init__(
         self,
         inventory_builder: RepositoryInventoryBuilder | None = None,
-        analyzer: PythonAstImpactAnalyzer | None = None,
+        analyzer: MultiLanguageImpactAnalyzer | None = None,
     ) -> None:
         self.inventory_builder = inventory_builder or RepositoryInventoryBuilder()
-        self.analyzer = analyzer or PythonAstImpactAnalyzer()
+        self.analyzer = analyzer or MultiLanguageImpactAnalyzer()
 
     def analyze(
         self,

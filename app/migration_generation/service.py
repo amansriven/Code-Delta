@@ -12,6 +12,7 @@ from app.control_plane.models import (
     Recommendation,
     VerificationCheck,
 )
+from app.hardening.limits import GenerationLimits
 from app.ingestion.storage import ArtifactStore
 
 from .intelligence import MigrationIntelligence
@@ -99,10 +100,12 @@ class MigrationGenerationService:
         intelligence: MigrationIntelligence,
         executor,
         artifact_store: ArtifactStore,
+        limits: GenerationLimits | None = None,
     ) -> None:
         self.intelligence = intelligence
         self.executor = executor
         self.artifact_store = artifact_store
+        self.limits = limits or GenerationLimits.from_env()
 
     def run(
         self,
@@ -112,7 +115,9 @@ class MigrationGenerationService:
         started_at: datetime | None = None,
     ) -> GenerationResult:
         created_at = started_at or datetime.now(UTC)
+        self.limits.validate_context(context)
         proposal = self.intelligence.propose(context)
+        self.limits.validate_proposal(proposal)
         _validate_plan(context, proposal.plan)
         patch_bytes, patch = validate_patch(root, proposal.plan, proposal.patch)
         patch_object_ref = self.artifact_store.put(patch_bytes, patch.sha256)
@@ -124,6 +129,7 @@ class MigrationGenerationService:
             proposal.patch,
         )
         execution = self.executor.execute(request)
+        self.limits.validate_execution(execution)
         review, recommendation = self.intelligence.review(
             context, proposal.plan, patch, execution
         )

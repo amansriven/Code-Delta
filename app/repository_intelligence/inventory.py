@@ -257,13 +257,17 @@ class RepositoryInventoryBuilder:
         )
         capabilities = [
             InventoryCapability(
-                analyzer_id="python-ast",
+                analyzer_id="multilanguage-static",
                 analyzer_version="1.0.0",
-                supported=bool(language_counts["Python"]),
-                languages=["Python"],
+                supported=bool(
+                    language_counts["Python"]
+                    or language_counts["JavaScript"]
+                    or language_counts["TypeScript"]
+                ),
+                languages=["Python", "JavaScript", "TypeScript"],
                 limitations=[
-                    "Static syntax analysis only; dynamic dispatch and computed strings "
-                    "are unresolved."
+                    "Python uses AST analysis. JavaScript and TypeScript use positive-only "
+                    "lexical evidence; negative results remain uncertain."
                 ],
             )
         ]
