@@ -1,0 +1,16 @@
+{
+  "id": "change_openapi_fixture",
+  "provider": {"id": "examplepay", "name": "ExamplePay", "product": "Payments API"},
+  "artifact_id": "artifact_openapi_fixture",
+  "canonical_url": "https://api.example.com/openapi.json",
+  "captured_at": "2026-08-01T12:00:00Z",
+  "published_at": "2026-08-01T11:00:00Z",
+  "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "media_type": "application/json",
+  "operation": "POST",
+  "path": "/v1/charges",
+  "previous_required": ["amount", "currency"],
+  "current_required": ["amount", "currency", "payment_method"],
+  "required_field_added": "payment_method",
+  "json_pointer": "/paths/~1v1~1charges/post/requestBody"
+}

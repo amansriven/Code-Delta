@@ -180,6 +180,8 @@ evidence, reduced-motion support, and responsive layouts.
   account settings.
 - Optional LLM-assisted case suggestions and finding explanations.
 - Deterministic operation when no model is available.
+- Provider-neutral Phase 1 control-plane contracts, lifecycle persistence,
+  cursor APIs, idempotent developer actions, and audit events.
 
 ## Who Delta Code is for
 
@@ -248,6 +250,7 @@ boundaries live in [the architecture directory](docs/architecture/README.md).
 
 - [API migration product RFC](docs/architecture/phase-0-rfc.md)
 - [Architecture contracts](docs/architecture/README.md)
+- [Phase 1 control-plane implementation](docs/architecture/phase-1-control-plane.md)
 - [Current dashboard API handoff](frontend/frontend-handoff.md)
 - [Local development and contributor runbook](docs/LOCAL_DEVELOPMENT.md)
 

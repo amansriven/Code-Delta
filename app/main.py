@@ -4,6 +4,7 @@ from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+from app.control_plane import router as control_plane_router
 from app.db import get_connection, init_schema
 from app.oauth import FRONTEND_URL, get_session
 from app.oauth import router as oauth_router
@@ -14,6 +15,7 @@ from app.webhook import router as webhook_router
 app = FastAPI(title="Delta Code")
 app.include_router(webhook_router)
 app.include_router(oauth_router)
+app.include_router(control_plane_router)
 
 allowed_origins = {
     FRONTEND_URL,

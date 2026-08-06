@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "id": "invalid_without_provenance",
+  "dedupe_key": "invalid",
+  "provider": {"id": "example", "name": "Example"},
+  "status": "ready",
+  "detected_at": "not-a-date",
+  "change_type": "unknown",
+  "severity": "unknown",
+  "summary": "Missing authoritative source evidence.",
+  "source_artifacts": [],
+  "targets": [],
+  "claims": [],
+  "confidence": {"score": 2, "basis": "inferred", "reasons": [], "unresolved": []}
+}

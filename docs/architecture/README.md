@@ -3,9 +3,9 @@
 This directory defines the product and technical contracts for Delta Code's
 evolution into an API change-management and migration platform.
 
-Phase 0 is intentionally documentation-only. These documents describe the
-boundaries that the database, workers, GitHub integration, LLM adapters,
-sandbox, and dashboard must follow before those systems are changed.
+Phase 0 established the contracts. Phase 1 now implements the provider-neutral
+control plane that those contracts require while preserving the legacy
+verification workflow.
 
 ## Phase 0 documents
 
@@ -24,6 +24,16 @@ sandbox, and dashboard must follow before those systems are changed.
 - [Example normalized change](examples/normalized-change.example.json) and
   [example migration evidence](examples/migration-evidence.example.json) — a
   fixture vertical slice used to validate both contracts.
+
+## Phase 1 implementation
+
+- [Control-plane implementation note](phase-1-control-plane.md) — persistence,
+  HTTP resources, state transitions, idempotency, audit behavior, and the
+  boundary handed to Phase 2 ingestion.
+- `app/control_plane/models.py` — versioned Pydantic contracts.
+- `app/control_plane/state.py` — explicit optimistic lifecycle transitions.
+- `app/control_plane/store.py` and `router.py` — workspace-scoped PostgreSQL
+  persistence and authenticated APIs.
 
 ## Decision status
 

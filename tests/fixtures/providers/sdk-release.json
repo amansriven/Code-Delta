@@ -1,0 +1,20 @@
+{
+  "id": "change_sdk_fixture",
+  "provider": {"id": "examplemail", "name": "ExampleMail", "product": "Python SDK"},
+  "artifact_id": "artifact_sdk_fixture",
+  "canonical_url": "https://github.com/example/mail-python/releases/tag/v5.0.0",
+  "captured_at": "2026-08-02T12:00:00Z",
+  "published_at": "2026-08-02T10:30:00Z",
+  "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "media_type": "text/markdown",
+  "package": "examplemail",
+  "ecosystem": "pypi",
+  "language": "python",
+  "previous_version": "4.9.0",
+  "version": "5.0.0",
+  "removed_symbol": "Client.send_message",
+  "summary": "Version 5 removes Client.send_message in favor of Client.messages.send.",
+  "replacement_guidance": "Replace Client.send_message calls with Client.messages.send.",
+  "section": "Breaking changes",
+  "severity": "medium"
+}
