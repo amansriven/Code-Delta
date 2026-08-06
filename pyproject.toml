@@ -12,6 +12,7 @@ dependencies = [
   "cryptography",
   "fastapi",
   "httpx",
+  "packaging",
   "procrastinate",
   "psycopg[binary]",
   "PyJWT",

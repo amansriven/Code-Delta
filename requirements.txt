@@ -3,5 +3,6 @@ uvicorn[standard]
 procrastinate
 psycopg[binary]
 httpx
+packaging
 PyJWT
 cryptography
