@@ -268,6 +268,31 @@ CREATE TABLE IF NOT EXISTS migration_artifacts (
     UNIQUE (workspace_id, attempt_id, kind, sha256)
 );
 
+CREATE TABLE IF NOT EXISTS pull_request_records (
+    id TEXT NOT NULL,
+    workspace_id TEXT NOT NULL REFERENCES workspaces(id),
+    migration_id TEXT NOT NULL,
+    repository_id TEXT NOT NULL,
+    last_attempt_id TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'queued',
+    branch TEXT NOT NULL,
+    base_sha TEXT NOT NULL CHECK (base_sha ~ '^[a-fA-F0-9]{40}$'),
+    patch_sha256 TEXT NOT NULL CHECK (patch_sha256 ~ '^[a-f0-9]{64}$'),
+    tree_sha TEXT,
+    commit_sha TEXT,
+    remote_head_sha TEXT,
+    pull_number INTEGER,
+    pull_node_id TEXT,
+    pull_url TEXT,
+    check_run_id BIGINT,
+    error_code TEXT,
+    data JSONB NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (workspace_id, id),
+    UNIQUE (workspace_id, migration_id)
+);
+
 CREATE TABLE IF NOT EXISTS developer_decisions (
     id TEXT NOT NULL,
     workspace_id TEXT NOT NULL REFERENCES workspaces(id),
@@ -327,6 +352,8 @@ CREATE INDEX IF NOT EXISTS migrations_workspace_feed
 ON migrations (workspace_id, created_at DESC, id);
 CREATE INDEX IF NOT EXISTS migration_artifacts_attempt
 ON migration_artifacts (workspace_id, attempt_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS pull_request_records_status
+ON pull_request_records (status, updated_at);
 CREATE INDEX IF NOT EXISTS audit_events_workspace_feed
 ON audit_events (workspace_id, created_at DESC, id);
 """

@@ -91,14 +91,17 @@ export SANDBOX_EXECUTOR_URL="https://your-sandbox-worker.example.workers.dev"
 export SANDBOX_EXECUTOR_TOKEN="..."
 # Enable only after the Phase 4 isolation checklist has passed.
 export SANDBOX_EXECUTION_ENABLED="true"
+# Enable only after GitHub App write permissions are reauthorized and tested.
+export GITHUB_PUBLISHING_ENABLED="true"
 ```
 
 Do not commit those values. Basic pages and the signed-out live-API state work
 without GitHub credentials.
 
-`ARTIFACT_STORAGE_ROOT` holds immutable Phase 2 source captures. The local path
-is ignored by Git. Hosted ingestion requires an encrypted persistent volume;
-the worker's `/tmp` fallback is suitable only for tests and local evaluation.
+`ARTIFACT_STORAGE_ROOT` holds immutable Phase 2 source captures and Phase 4
+patch artifacts. The local path is ignored by Git. Hosted ingestion and
+publishing require an encrypted persistent volume; an ephemeral path is
+suitable only for tests and local evaluation.
 
 Private repository verification additionally requires the GitHub App to have
 read-only **Contents** permission. Install or update the app on the private
@@ -107,6 +110,12 @@ to repeat GitHub authorization and refresh the session's repository list.
 The refreshed OAuth session records each repository's clone URL, default
 branch, and GitHub App installation id; existing sessions must be refreshed
 before Phase 3 jobs can check out those repositories.
+
+Phase 5 publishing additionally requires explicit GitHub App installation
+reauthorization for **Contents: read and write**, **Pull requests: read and
+write**, and **Checks: read and write**. Keep `GITHUB_PUBLISHING_ENABLED`
+unset until the controlled-repository checklist in the
+[Phase 5 architecture note](architecture/phase-5-github-publishing.md) passes.
 
 ## Test and build
 

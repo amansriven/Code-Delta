@@ -193,6 +193,7 @@ def queue_attempt(
             **migration_data,
             "status": "planning",
             "decision_state": None,
+            "error_code": None,
             "current_attempt_id": attempt_id,
             "version": next_migration_version,
             "updated_at": now.isoformat(),
@@ -413,6 +414,7 @@ def complete_attempt(
             **migration_data,
             "status": target,
             "decision_state": None,
+            "error_code": None,
             "version": final_migration_version,
             "updated_at": now.isoformat(),
         }

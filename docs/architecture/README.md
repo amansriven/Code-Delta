@@ -3,7 +3,7 @@
 This directory defines the product and technical contracts for Delta Code's
 evolution into an API change-management and migration platform.
 
-Phase 0 established the contracts. Phases 1–4 now implement the
+Phase 0 established the contracts. Phases 1–5 now implement the
 provider-neutral control plane, official-source ingestion, and deterministic
 repository intelligence, plus guarded generation and sandbox verification,
 while preserving the legacy verification workflow.
@@ -63,6 +63,14 @@ while preserving the legacy verification workflow.
   policy, model/executor boundaries, durable orchestration, and authenticated API.
 - `sandbox-worker/` — the independently deployable, deny-by-default command
   execution boundary.
+
+## Phase 5 implementation
+
+- [GitHub publishing](phase-5-github-publishing.md) — exact-patch Git objects,
+  owned branches, evidence-rich draft PRs, Check Runs, revision synchronization,
+  decision synchronization, permission verification, and the write gate.
+- `app/github_publishing/` — publisher contracts, artifact reconstruction,
+  GitHub API boundary, durable checkpoints, orchestration, and authenticated API.
 
 ## Decision status
 

@@ -38,7 +38,7 @@ MIGRATION_TRANSITIONS: Mapping[str, frozenset[str]] = {
     "verifying": frozenset({"ready", "needs_revision", "blocked"}),
     "ready": frozenset({"pr_opening", "needs_revision", "snoozed", "declined"}),
     "needs_revision": frozenset({"planning"}),
-    "blocked": frozenset({"planning"}),
+    "blocked": frozenset({"planning", "pr_opening"}),
     "pr_opening": frozenset({"pr_opened", "blocked"}),
     "pr_opened": frozenset({"approved", "needs_revision", "snoozed", "declined"}),
     "snoozed": frozenset({"queued"}),
@@ -75,4 +75,3 @@ def validate_transition(
     if requested not in transitions[current]:
         raise StateTransitionError(f"cannot transition from {current} to {requested}")
     return version + 1
-

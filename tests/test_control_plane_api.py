@@ -95,3 +95,30 @@ def test_stale_developer_action_returns_conflict(client, monkeypatch):
 
     assert response.status_code == 409
     assert response.json()["detail"] == "expected version 2, found 3"
+
+
+def test_approve_synchronizes_draft_before_recording_decision(client, monkeypatch):
+    from app.github_publishing import actions
+
+    events = []
+    monkeypatch.setenv("GITHUB_PUBLISHING_ENABLED", "true")
+    monkeypatch.setattr(
+        actions,
+        "synchronize_developer_action",
+        lambda *_args, **_kwargs: events.append("github"),
+    )
+    monkeypatch.setattr(
+        store,
+        "apply_developer_action",
+        lambda *_args, **_kwargs: events.append("database")
+        or {"status": "approved", "version": 6},
+    )
+
+    response = client.post(
+        "/migrations/migration-1/approve",
+        headers={"Idempotency-Key": "approve-123", "Origin": "http://localhost:3000"},
+        json={"expected_version": 5},
+    )
+
+    assert response.status_code == 200
+    assert events == ["github", "database"]

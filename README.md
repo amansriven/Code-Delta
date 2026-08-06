@@ -188,6 +188,11 @@ evidence, reduced-motion support, and responsive layouts.
 - Phase 3 immutable repository snapshots, deterministic PyPI/npm dependency
   inventory, Python AST call-site analysis, explicit coverage outcomes, and
   affected migration fan-out without executing repository code.
+- Phase 4 bounded migration generation, immutable patch artifacts, deterministic
+  sandbox evidence, model review, and fail-closed Cloudflare execution.
+- Phase 5 exact-patch GitHub commits, owned branches, draft pull requests,
+  Check Runs, revision synchronization, and developer-controlled ready/close
+  actions behind an explicit write gate.
 
 ## Who Delta Code is for
 
@@ -262,6 +267,7 @@ boundaries live in [the architecture directory](docs/architecture/README.md).
 - [Phase 2 official-source ingestion](docs/architecture/phase-2-ingestion.md)
 - [Phase 3 repository intelligence](docs/architecture/phase-3-repository-intelligence.md)
 - [Phase 4 generation and sandbox verification](docs/architecture/phase-4-generation-and-sandbox.md)
+- [Phase 5 GitHub publishing](docs/architecture/phase-5-github-publishing.md)
 - [Current dashboard API handoff](frontend/frontend-handoff.md)
 - [Local development and contributor runbook](docs/LOCAL_DEVELOPMENT.md)
 

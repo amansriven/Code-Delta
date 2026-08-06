@@ -7,11 +7,18 @@ test suite — there's no way to test real GitHub API calls without a real App.
 
 import os
 import time
+from dataclasses import dataclass
 
 import httpx
 import jwt
 
 GITHUB_API = "https://api.github.com"
+
+
+@dataclass(frozen=True)
+class InstallationCredentials:
+    token: str
+    permissions: dict[str, str]
 
 
 def _app_jwt() -> str:
@@ -23,6 +30,10 @@ def _app_jwt() -> str:
 
 
 def get_installation_token(installation_id: int) -> str:
+    return get_installation_credentials(installation_id).token
+
+
+def get_installation_credentials(installation_id: int) -> InstallationCredentials:
     resp = httpx.post(
         f"{GITHUB_API}/app/installations/{installation_id}/access_tokens",
         headers={
@@ -32,7 +43,11 @@ def get_installation_token(installation_id: int) -> str:
         timeout=10.0,
     )
     resp.raise_for_status()
-    return resp.json()["token"]
+    payload = resp.json()
+    return InstallationCredentials(
+        token=payload["token"],
+        permissions=dict(payload.get("permissions") or {}),
+    )
 
 
 def _format_summary(findings: list[dict]) -> str:

@@ -114,7 +114,8 @@ enablement.
 ## Current boundary
 
 Phase 4 produces plans, structured patch artifacts, deterministic check
-evidence, reviews, recommendations, and durable attempts. It does not apply
-patches to a Git branch or open a pull request; publication remains the next
-phase. The HTTP intelligence gateway is a deliberate provider-neutral seam,
-not a model-provider-specific implementation in this repository.
+evidence, reviews, recommendations, and durable attempts. It never applies
+patches to Git itself; Phase 5 consumes only its immutable artifact and evidence
+through the separate publisher boundary. The HTTP intelligence gateway is a
+deliberate provider-neutral seam, not a model-provider-specific implementation
+in this repository.

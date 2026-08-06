@@ -433,6 +433,10 @@ class GenerateMigrationRequest(ContractModel):
     expected_version: int = Field(ge=1)
 
 
+class PublishMigrationRequest(ContractModel):
+    expected_version: int = Field(ge=1)
+
+
 class AuditEvent(ContractModel):
     id: str
     actor: str

@@ -6,6 +6,7 @@ from pydantic import BaseModel
 
 from app.control_plane import router as control_plane_router
 from app.db import get_connection, init_schema
+from app.github_publishing import router as github_publishing_router
 from app.ingestion import router as ingestion_router
 from app.migration_generation import router as migration_generation_router
 from app.oauth import FRONTEND_URL, get_session
@@ -22,6 +23,7 @@ app.include_router(control_plane_router)
 app.include_router(ingestion_router)
 app.include_router(repository_intelligence_router)
 app.include_router(migration_generation_router)
+app.include_router(github_publishing_router)
 
 allowed_origins = {
     FRONTEND_URL,

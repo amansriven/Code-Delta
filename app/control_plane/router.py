@@ -1,5 +1,6 @@
 """Workspace-scoped Phase 1 control-plane HTTP API."""
 
+import os
 from typing import Annotated
 from urllib.parse import urlparse
 
@@ -140,6 +141,19 @@ def _developer_action(
         raise HTTPException(status_code=422, detail="snooze_until is required")
     workspace_id, session = context
     try:
+        if (
+            action in {"approve", "decline"}
+            and os.environ.get("GITHUB_PUBLISHING_ENABLED", "").lower() == "true"
+        ):
+            from app.github_publishing.actions import synchronize_developer_action
+
+            synchronize_developer_action(
+                workspace_id,
+                migration_id,
+                action,
+                actor=session["github_login"],
+                expected_version=body.expected_version,
+            )
         return store.apply_developer_action(
             workspace_id,
             migration_id,
@@ -159,6 +173,8 @@ def _developer_action(
         raise HTTPException(status_code=409, detail=str(exc)) from exc
     except store.IdempotencyConflictError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail="GitHub pull request update failed") from exc
 
 
 @router.post("/migrations/{migration_id}/approve")
