@@ -79,7 +79,8 @@ test("server-renders the Delta Code landing page", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>Delta Code — Ship API changes without the guesswork<\/title>/i);
+  assert.match(html, /<title>Delta Code<\/title>/i);
+  assert.match(html, /<link rel="icon" href="\/favicon\.svg" type="image\/svg\+xml"/i);
   assert.match(html, /Ship API changes/);
   assert.match(html, /without the guesswork/);
   assert.match(html, /Everything you need to review API behavior/);

@@ -13,13 +13,15 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     metadataBase: new URL(origin),
-    title: {
-      default: "Delta Code — Ship API changes without the guesswork",
-      template: "%s · Delta Code",
-    },
+    title: "Delta Code",
     description:
       "Evidence-first API verification that shows exactly how pull requests change real behavior.",
     applicationName: "Delta Code",
+    icons: {
+      icon: [{ url: "/favicon.svg", type: "image/svg+xml" }],
+      shortcut: "/favicon.svg",
+      apple: "/brand/delta-code-badge.png",
+    },
     keywords: [
       "API regression testing",
       "GitHub pull requests",
