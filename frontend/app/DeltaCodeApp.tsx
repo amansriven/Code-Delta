@@ -4,6 +4,8 @@
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ApiConnectionStatus,
+  checkApiConnection,
   CurrentUser,
   demoDetails,
   demoRuns,
@@ -266,6 +268,9 @@ function UserAvatar({
 
 function AppHeader({ active }: { active: DashboardSection }) {
   const [user, setUser] = useState<CurrentUser | null>(null);
+  const [apiStatus, setApiStatus] = useState<ApiConnectionStatus>(
+    liveApiUrl ? "checking" : "preview",
+  );
   const [menuOpen, setMenuOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [commandOpen, setCommandOpen] = useState(false);
@@ -274,6 +279,17 @@ function AppHeader({ active }: { active: DashboardSection }) {
   useEffect(() => {
     const controller = new AbortController();
     fetchMe(controller.signal).then(setUser).catch(() => setUser(null));
+    return () => controller.abort();
+  }, []);
+
+  useEffect(() => {
+    if (!liveApiUrl) return;
+    const controller = new AbortController();
+    checkApiConnection(controller.signal)
+      .then(setApiStatus)
+      .catch((reason: Error) => {
+        if (reason.name !== "AbortError") setApiStatus("unavailable");
+      });
     return () => controller.abort();
   }, []);
 
@@ -341,9 +357,18 @@ function AppHeader({ active }: { active: DashboardSection }) {
           ))}
         </nav>
         <div className="sidebar-footer">
-          <span className="api-indicator">
+          <span
+            className={`api-indicator api-indicator-${apiStatus}`}
+            title={apiStatus === "upgrade-required" ? "The API is online but missing required routes." : undefined}
+          >
             <i />
-            {liveApiUrl ? "API connected" : "Preview workspace"}
+            {{
+              preview: "Preview workspace",
+              checking: "Checking API",
+              connected: "API connected",
+              "upgrade-required": "API update required",
+              unavailable: "API unavailable",
+            }[apiStatus]}
           </span>
           <ThemeToggle />
           <div className="sidebar-account">

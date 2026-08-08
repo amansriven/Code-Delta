@@ -7,4 +7,8 @@ def test_health_endpoint() -> None:
     response = TestClient(app).get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json() == {
+        "status": "ok",
+        "api_version": "2026-08-06",
+        "capabilities": ["migrations", "providers"],
+    }

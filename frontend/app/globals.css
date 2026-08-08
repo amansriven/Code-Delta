@@ -6476,6 +6476,18 @@ kbd {
   box-shadow: 0 0 0 4px var(--success-soft);
 }
 
+.api-indicator-preview i,
+.api-indicator-checking i {
+  background: var(--warning);
+  box-shadow: 0 0 0 4px var(--warning-soft);
+}
+
+.api-indicator-upgrade-required i,
+.api-indicator-unavailable i {
+  background: var(--danger);
+  box-shadow: 0 0 0 4px var(--danger-soft);
+}
+
 .sidebar-account {
   position: relative;
   padding-top: 11px;

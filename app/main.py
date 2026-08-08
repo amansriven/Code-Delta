@@ -60,9 +60,13 @@ app.add_middleware(
 
 
 @app.get("/health", include_in_schema=False)
-def health() -> dict[str, str]:
-    """Return a lightweight liveness signal for the web service."""
-    return {"status": "ok"}
+def health() -> dict[str, str | list[str]]:
+    """Return liveness and the capabilities required by the current frontend."""
+    return {
+        "status": "ok",
+        "api_version": "2026-08-06",
+        "capabilities": ["migrations", "providers"],
+    }
 
 
 class CreateRunRequest(BaseModel):

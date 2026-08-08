@@ -117,4 +117,4 @@ deploy-worker:
 	railway up --service worker --environment "$(RAILWAY_ENV)" --ci -m "Deploy Delta Code worker"
 
 deploy-frontend: build
-	cd frontend && npx vercel deploy --prod $(if $(VERCEL_SCOPE),--scope "$(VERCEL_SCOPE)",)
+	npx vercel deploy --prod $(if $(VERCEL_SCOPE),--scope "$(VERCEL_SCOPE)",)

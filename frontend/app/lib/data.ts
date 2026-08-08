@@ -173,6 +173,37 @@ export const demoDetails: Record<number, RunDetail> = {
 export const liveApiUrl =
   process.env.NEXT_PUBLIC_DELTA_CODE_API_URL?.replace(/\/$/, "") ?? "";
 
+export type ApiConnectionStatus =
+  | "preview"
+  | "checking"
+  | "connected"
+  | "upgrade-required"
+  | "unavailable";
+
+interface HealthResponse {
+  status?: string;
+  capabilities?: unknown;
+}
+
+export async function checkApiConnection(
+  signal?: AbortSignal,
+): Promise<"connected" | "upgrade-required" | "unavailable"> {
+  if (!liveApiUrl) return "unavailable";
+
+  const response = await fetch(`${liveApiUrl}/health`, { signal });
+  if (!response.ok) return "unavailable";
+
+  const health = await response.json().catch(() => null) as HealthResponse | null;
+  if (health?.status !== "ok") return "unavailable";
+
+  const capabilities = Array.isArray(health.capabilities)
+    ? health.capabilities.filter((item): item is string => typeof item === "string")
+    : [];
+  return capabilities.includes("migrations") && capabilities.includes("providers")
+    ? "connected"
+    : "upgrade-required";
+}
+
 export async function fetchRuns(signal?: AbortSignal): Promise<RunSummary[]> {
   const response = await fetch(`${liveApiUrl}/runs`, {
     signal,

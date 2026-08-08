@@ -527,6 +527,9 @@ export async function fetchMigrations(cursor?: string, signal?: AbortSignal): Pr
   const params = new URLSearchParams({ limit: "25" });
   if (cursor) params.set("cursor", cursor);
   const response = await fetch(`${liveApiUrl}/migrations?${params}`, { signal, credentials: "include" });
+  if (response.status === 404) {
+    throw new Error("The connected API needs to be upgraded before migrations are available.");
+  }
   return readJson(response, "Migrations could not be loaded");
 }
 
@@ -548,6 +551,9 @@ export async function fetchPublication(id: string, signal?: AbortSignal): Promis
 
 export async function fetchProviders(signal?: AbortSignal): Promise<CursorPage<ProviderSummary>> {
   const response = await fetch(`${liveApiUrl}/providers?limit=100`, { signal, credentials: "include" });
+  if (response.status === 404) {
+    throw new Error("The connected API needs to be upgraded before providers are available.");
+  }
   return readJson(response, "Providers could not be loaded");
 }
 
